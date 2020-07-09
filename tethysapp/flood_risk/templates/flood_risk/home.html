@@ -1,0 +1,14 @@
+{% extends "flood_risk/base.html" %}
+{% load tethys_gizmos %}
+
+{% block app_content %}
+  <h1>Zone File Generation</h1>
+  <p>Draw or select zones from subcatchments</p>
+{% endblock %}
+
+{% block app_actions %}
+  {% gizmo save_button %}
+  {% gizmo edit_button %}
+  {% gizmo remove_button %}
+  {% gizmo next_button %}
+{% endblock %}
