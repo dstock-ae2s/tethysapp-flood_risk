@@ -13,7 +13,7 @@ Function to move files to user workspace
 def sub_initial(shapefile, file_extension, file_name):
     print("In the sub initial function")
     # Set temporary directory
-    SHP_DIR = '/home/dstock/trial/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/'+file_name+'/'
+    SHP_DIR = '/home/dstock/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/'+file_name+'/'
     try:
         os.mkdir(SHP_DIR)
     except OSError:

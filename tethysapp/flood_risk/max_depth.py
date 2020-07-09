@@ -18,7 +18,7 @@ def add_buffer(buffer_val):
 
     # Set the working directory
     file_name = "Building_Outlines"
-    SHP_DIR = "/home/dstock/trial/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/"+file_name+'/'
+    SHP_DIR = "/home/dstock/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/"+file_name+'/'
     os.chdir(SHP_DIR)
 
     # Reading in the lines shapefile
@@ -38,7 +38,7 @@ def add_buffer(buffer_val):
         source_crs = source.crs
         # Set the output file
         file_name = "Bldg_Outline_Polygons"
-        SHP_DIR = "/home/dstock/trial/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/" + file_name + '/'
+        SHP_DIR = "/home/dstock/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/" + file_name + '/'
         try:
             os.mkdir(SHP_DIR)
         except OSError:
@@ -80,7 +80,7 @@ Function to populate the Max Depth field based on raster data
 def max_water_depth(rasters, objectid_name, raster_name):
     # Set the working directory
     file_name = "Bldg_Outline_Polygons"
-    SHP_DIR = "/home/dstock/trial/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/"+file_name+'/'
+    SHP_DIR = "/home/dstock/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/"+file_name+'/'
     os.chdir(SHP_DIR)
     for file in os.listdir(SHP_DIR):
         # Reading the lines shapefile only
@@ -89,7 +89,7 @@ def max_water_depth(rasters, objectid_name, raster_name):
 
     with fiona.open(f_path, 'r') as polygon_file:
         file_name = raster_name
-        SHP_DIR = "/home/dstock/trial/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/" + file_name + '/'
+        SHP_DIR = "/home/dstock/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/" + file_name + '/'
         os.chdir(SHP_DIR)
         with rasterio.open(rasters) as raster_file:
 
@@ -123,7 +123,7 @@ Function called by max_depth which joins the Max_Depth field to the input buildi
 def spatial_join(objectid_name, raster_stats_dataframe):
     # Set the working directory
     file_name = "Buildings"
-    SHP_DIR = "/home/dstock/trial/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/"+file_name+'/'
+    SHP_DIR = "/home/dstock/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/"+file_name+'/'
     os.chdir(SHP_DIR)
 
     for file in os.listdir(SHP_DIR):
@@ -164,7 +164,7 @@ def spatial_join(objectid_name, raster_stats_dataframe):
     else:
         # Set the working directory
         file_name = "Buildings_Inundation"
-        SHP_DIR = "/home/dstock/trial/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/" + file_name + '/'
+        SHP_DIR = "/home/dstock/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/" + file_name + '/'
         try:
             os.mkdir(SHP_DIR)
         except OSError:

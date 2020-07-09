@@ -23,7 +23,7 @@ def building_process(request):
     print("Correct App")
     return_obj = {}
     file_name = "Buildings"
-    SHP_DIR = '/home/dstock/trial/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/'+file_name+'/'
+    SHP_DIR = '/home/dstock/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/'+file_name+'/'
     try:
         os.mkdir(SHP_DIR)
     except OSError:
@@ -77,13 +77,13 @@ def raster_process(request):
 
         # Add max depth from raster to building boundary lines
         file_name = "Building_Outlines"
-        SHP_DIR = '/home/dstock/AE2S_Hydrologic_Analyses/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/' + file_name + '/'
+        SHP_DIR = '/home/dstock/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/' + file_name + '/'
         for file in os.listdir(SHP_DIR):
             # Reading the shapefile only
             if file.endswith(".shp"):
                 f_path = os.path.join(SHP_DIR, file)
         file_name = "Inundation_Raster"
-        SHP_DIR = '/home/dstock/AE2S_Hydrologic_Analyses/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/' + file_name + '/'
+        SHP_DIR = '/home/dstock/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/' + file_name + '/'
         for file in os.listdir(SHP_DIR):
             # Reading the raster only
             if file.endswith(".tif"):
@@ -114,7 +114,7 @@ def tax_process(request):
 
         print("After sub initial")
 
-        SHP_DIR = '/home/dstock/AE2S_Hydrologic_Analyses/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/' + file_name + '/'
+        SHP_DIR = '/home/dstock/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/' + file_name + '/'
         SHP_DIR = os.path.join(SHP_DIR, '')
         for file in os.listdir(SHP_DIR):
             # Checking if the shapefile is in the directory
@@ -144,7 +144,7 @@ def tax_process2(request):
         # Get OBJECTID field name
 
         file_name = "Tax_Parcel"
-        SHP_DIR = '/home/dstock/AE2S_Hydrologic_Analyses/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/' + file_name + '/'
+        SHP_DIR = '/home/dstock/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/' + file_name + '/'
         for file in os.listdir(SHP_DIR):
             # Reading the shapefile only
             if file.endswith(".shp"):
@@ -173,7 +173,7 @@ def land_process(request):
         # Move file to user workspace
         sub_initial(land_shapefile, ".shp", file_name)
 
-        SHP_DIR = '/home/dstock/AE2S_Hydrologic_Analyses/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/' + file_name + '/'
+        SHP_DIR = '/home/dstock/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/' + file_name + '/'
         SHP_DIR = os.path.join(SHP_DIR, '')
         for file in os.listdir(SHP_DIR):
             # Checking if the shapefile is in the directory
@@ -203,7 +203,7 @@ def land_process2(request):
         # Get OBJECTID field name
 
         file_name = "Landuse"
-        SHP_DIR = '/home/dstock/AE2S_Hydrologic_Analyses/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/' + file_name + '/'
+        SHP_DIR = '/home/dstock/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/' + file_name + '/'
         for file in os.listdir(SHP_DIR):
             # Reading the shapefile only
             if file.endswith(".shp"):
