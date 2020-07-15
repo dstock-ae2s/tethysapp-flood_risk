@@ -166,6 +166,23 @@ def risk_analysis(request):
         style='success',
         attributes={'id': 'submit-streets'},
     )
-    context = {'add_button_streets':add_button_streets}
+    distance_input = TextInput(
+        display_text='Road Segment Length',
+        name='distance-input',
+        placeholder=0,
+        attributes={'id': 'distance-input'}
+    )
+    add_button_streetid = Button(
+        display_text='Upload Street ID Field',
+        name='add-button-streetid',
+        icon='glyphicon glyphicon-plus',
+        style='success',
+        attributes={'id': 'submit-streetid'},
+    )
+    context = {
+        'add_button_streets':add_button_streets,
+        'distance_input':distance_input,
+        'add_button_streetid': add_button_streetid
+    }
 
     return render(request, 'flood_risk/risk_analysis.html', context)

@@ -70,6 +70,16 @@ class FloodRisk(TethysAppBase):
                 name='land_process2_ajax',
                 url='layer-gen/layers/land-process2-ajax',
                 controller='flood_risk.ajax_controllers.land_process2'
+            ),
+            UrlMap(
+                name='streets_process_ajax',
+                url='flood-risk/risk-analysis/risks/streets-process-ajax',
+                controller='flood_risk.ajax_controllers.streets_process'
+            ),
+            UrlMap(
+                name='streets_process2_ajax',
+                url='flood-risk/risk-analysis/risks/streets-process2-ajax',
+                controller='flood_risk.ajax_controllers.streets_process2'
             )
         )
 

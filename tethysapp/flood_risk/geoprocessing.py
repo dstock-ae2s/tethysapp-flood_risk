@@ -13,7 +13,7 @@ Convert polygon shapefile to lines shapefile
 def polygon_to_line(shapefile, file_name):
 
     # Set the working directory
-    SHP_DIR = "/home/dstock/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/"+file_name+'/'
+    SHP_DIR = "/home/dstock/tethysdev/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/"+file_name+'/'
     os.chdir(SHP_DIR)
 
     # Open the Buildings shapefile
@@ -25,7 +25,7 @@ def polygon_to_line(shapefile, file_name):
                        'geometry': ['LineString']}
         # Create a file to save the lines shapefile
         file_name = "Building_Outlines"
-        SHP_DIR = "/home/dstock/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/" + file_name + '/'
+        SHP_DIR = "/home/dstock/tethysdev/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/" + file_name + '/'
         try:
             os.mkdir(SHP_DIR)
         except OSError:

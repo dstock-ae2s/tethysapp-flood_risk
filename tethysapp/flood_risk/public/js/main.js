@@ -4,6 +4,8 @@ var buffer;
 var objectid_field;
 var tax_field;
 var taxid_field;
+var distance;
+var streetid_field;
 
 
 function getCookie(name) {
@@ -156,6 +158,7 @@ upload_tax_file = function(){
     //Preparing data to be submitted via AJAX POST request
     var data = new FormData();
 
+
     for (var i=0; i<shapefiles.length; i++){
         data.append("shapefile", shapefiles[i]);
     }
@@ -292,11 +295,74 @@ raster_file = function(data) {
 
 }
 
+upload_streets_file = function(){
+    var shapefiles = $("#street-upload-input")[0].files;
+
+    //Preparing data to be submitted via AJAX POST request
+    var data = new FormData();
+
+    for (var i=0; i<shapefiles.length; i++){
+        data.append("shapefile", shapefiles[i]);
+    }
+
+    var submit_button = $("#submit-streets");
+    var submit_button_html = submit_button.html();
+    submit_button.text('Submitting...');
+
+    street_risk(data);
+
+};
+
+street_risk = function(data) {
+    var street_risk = ajax_update_database_with_file("streets-process-ajax",data); //Submitting the data through the ajax function, see main.js for the helper function.
+
+    street_risk.done(function(return_data){ //Reset the form once the data is added successfully
+        console.log("In the done")
+        if("streetid_names" in return_data){
+            console.log("In the if")
+            var submit_button = $("#submit-streets");
+            var submit_button_html = submit_button.html();
+            submit_button.text('Submitted');
+            var options = return_data.streetid_names;
+
+            var select = document.getElementById("streetid-field")
+
+            // Optional: Clear all existing options first:
+            select.innerHTML="<option value=\""+"Select Street ID Field"+"\">" +"Select Street ID Field"+"</option>";
+            // Populate list with options:
+            for(var i=0; i<options.length; i++){
+                var opt = options[i];
+                select.innerHTML += "<option value=\"" + opt + "\">" + opt + "</option>";
+            }
+        };
+    });
+}
+
+process_streets = function(data) {
+
+    streetid_field = document.getElementById("streetid-field").value;
+
+    var data = new FormData();
+    data.append("streetid_field", streetid_field)
+    buffer = 20
+    data.append("buffer", buffer);
+    distance = document.getElementById("distance-input").value;
+    data.append("distance", distance);
+
+    var submit_button = $("#submit-streetid");
+    var submit_button_html = submit_button.html();
+    submit_button.text('Submitted');
+
+    var process_tax_file = ajax_update_database_with_file("streets-process2-ajax",data); //Submitting the data through the ajax function, see main.js for the helper function.
+}
+
 $("#submit-building").click(upload_building_file);
 $("#submit-tax").click(upload_tax_file);
 $("#submit-process-tax").click(process_tax);
 $("#submit-land").click(upload_land_file);
 $("#submit-process-land").click(process_land);
 $("#submit-depth").click(raster_file);
+$("#submit-streets").click(upload_streets_file);
+$("#submit-streetid").click(process_streets);
 
 

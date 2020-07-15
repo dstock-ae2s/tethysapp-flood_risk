@@ -19,7 +19,7 @@ Function which joins tax parcel values to building inundation shapefile
 def tax_join(objectid_name, taxid_name, tax_val, f_path):
     # Set the working directory and find building inundation shapefile
     file_name = "Buildings_Inundation"
-    SHP_DIR = "/home/dstock/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/"+file_name+'/'
+    SHP_DIR = "/home/dstock/tethysdev/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/"+file_name+'/'
     os.chdir(SHP_DIR)
     for file in os.listdir(SHP_DIR):
         # Reading the shapefile only
@@ -56,7 +56,7 @@ def tax_join(objectid_name, taxid_name, tax_val, f_path):
         print("Dataframe is empty")
     else:
         file_name = "Parcel_Inundation"
-        SHP_DIR = "/home/dstock/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/" + file_name + '/'
+        SHP_DIR = "/home/dstock/tethysdev/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/" + file_name + '/'
         try:
             os.mkdir(SHP_DIR)
         except OSError:

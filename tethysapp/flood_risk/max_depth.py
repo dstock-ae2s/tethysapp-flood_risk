@@ -2,7 +2,7 @@ from shapely.geometry import mapping, shape
 import fiona
 import os
 from collections import OrderedDict
-from shapely.geometry import MultiPolygon, Point, shape, mapping, LineString, Polygon
+from shapely.geometry import MultiPolygon, Point, shape, mapping, LineString, Polygon, MultiLineString
 from shapely import wkt
 import rasterio
 from rasterio.features import shapes
@@ -11,14 +11,14 @@ import numpy as np
 from osgeo import gdal
 import geopandas as gpd
 
+
 """
 Function to add a buffer to building outlines resulting in a polygon shapefile
 """
 def add_buffer(buffer_val):
-
     # Set the working directory
     file_name = "Building_Outlines"
-    SHP_DIR = "/home/dstock/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/"+file_name+'/'
+    SHP_DIR = "/home/dstock/tethysdev/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/" + file_name + '/'
     os.chdir(SHP_DIR)
 
     # Reading in the lines shapefile
@@ -38,7 +38,7 @@ def add_buffer(buffer_val):
         source_crs = source.crs
         # Set the output file
         file_name = "Bldg_Outline_Polygons"
-        SHP_DIR = "/home/dstock/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/" + file_name + '/'
+        SHP_DIR = "/home/dstock/tethysdev/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/" + file_name + '/'
         try:
             os.mkdir(SHP_DIR)
         except OSError:
@@ -57,8 +57,8 @@ def add_buffer(buffer_val):
                     line_buffer = line_shape.buffer(float(buffer_val))
 
                     # Check area to make sure Building Polygon is hollow
-                    if line_buffer.area > (line_buffer.length * (float(buffer_val)+0.001)):
-                        line_buffer=line_shape.buffer(0.1)
+                    if line_buffer.area > (line_buffer.length * (float(buffer_val) + 0.001)):
+                        line_buffer = line_shape.buffer(0.1)
                         if line_buffer.area > (line_buffer.length * (float(buffer_val) + 0.001)):
                             line_buffer = line_shape.buffer(0.01)
                             if line_buffer.area > (line_buffer.length * (float(buffer_val) + 0.001)):
@@ -73,14 +73,13 @@ def add_buffer(buffer_val):
                                                  'Shape_Leng': line_buffer.length,
                                                  'Shape_Area': line_buffer.area,
                                                  'Max_Depth': 0}})
-
 """
 Function to populate the Max Depth field based on raster data
 """
 def max_water_depth(rasters, objectid_name, raster_name):
     # Set the working directory
     file_name = "Bldg_Outline_Polygons"
-    SHP_DIR = "/home/dstock/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/"+file_name+'/'
+    SHP_DIR = "/home/dstock/tethysdev/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/"+file_name+'/'
     os.chdir(SHP_DIR)
     for file in os.listdir(SHP_DIR):
         # Reading the lines shapefile only
@@ -89,7 +88,7 @@ def max_water_depth(rasters, objectid_name, raster_name):
 
     with fiona.open(f_path, 'r') as polygon_file:
         file_name = raster_name
-        SHP_DIR = "/home/dstock/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/" + file_name + '/'
+        SHP_DIR = "/home/dstock/tethysdev/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/" + file_name + '/'
         os.chdir(SHP_DIR)
         with rasterio.open(rasters) as raster_file:
 
@@ -123,7 +122,7 @@ Function called by max_depth which joins the Max_Depth field to the input buildi
 def spatial_join(objectid_name, raster_stats_dataframe):
     # Set the working directory
     file_name = "Buildings"
-    SHP_DIR = "/home/dstock/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/"+file_name+'/'
+    SHP_DIR = "/home/dstock/tethysdev/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/"+file_name+'/'
     os.chdir(SHP_DIR)
 
     for file in os.listdir(SHP_DIR):
@@ -164,7 +163,7 @@ def spatial_join(objectid_name, raster_stats_dataframe):
     else:
         # Set the working directory
         file_name = "Buildings_Inundation"
-        SHP_DIR = "/home/dstock/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/" + file_name + '/'
+        SHP_DIR = "/home/dstock/tethysdev/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/" + file_name + '/'
         try:
             os.mkdir(SHP_DIR)
         except OSError:

@@ -6,7 +6,7 @@ import os
 import json
 
 def get_field_names(shapefile, file_extension, file_name):
-    SHP_DIR = '/home/dstock/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/'+file_name+'/'
+    SHP_DIR = '/home/dstock/tethysdev/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/'+file_name+'/'
     SHP_DIR = os.path.join(SHP_DIR, '')
     field_list = []
     return_obj = {}
@@ -37,7 +37,7 @@ def get_field_names(shapefile, file_extension, file_name):
 
 
 def get_field_names_singular(file_extension, file_name):
-    SHP_DIR = '/home/dstock/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/' + file_name + '/'
+    SHP_DIR = '/home/dstock/tethysdev/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/' + file_name + '/'
     SHP_DIR = os.path.join(SHP_DIR, '')
     field_list = []
     return_obj = {}
