@@ -267,7 +267,7 @@ def streets_process2(request):
             buffer_val = 20
         distance_val = request.POST["distance"]
 
-        add_buffer_generic(streetid, float(distance_val), buffer_val, file_name, output_file, output_file2)
+        add_buffer_generic(str(streetid), float(distance_val), buffer_val, file_name, output_file, output_file2)
 
         #max_water_depth2(output_file, output_file2, 'Max_Depth')
 

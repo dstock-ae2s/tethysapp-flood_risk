@@ -169,8 +169,14 @@ def risk_analysis(request):
     distance_input = TextInput(
         display_text='Road Segment Length',
         name='distance-input',
-        placeholder=0,
+        placeholder=100,
         attributes={'id': 'distance-input'}
+    )
+    street_buffer = TextInput(
+        display_text='Street Buffer',
+        name='street-buffer',
+        placeholder=0.5,
+        attributes={'id': 'street-buffer'}
     )
     add_button_streetid = Button(
         display_text='Upload Street ID Field',
@@ -182,6 +188,7 @@ def risk_analysis(request):
     context = {
         'add_button_streets':add_button_streets,
         'distance_input':distance_input,
+        'street_buffer':street_buffer,
         'add_button_streetid': add_button_streetid
     }
 

@@ -6,31 +6,22 @@ import rasterio
 import rasterstats as rs
 import numpy as np
 import geopandas as gpd
-from geopandas.tools import sjoin
 
 """
-Function to add a buffer to building outlines resulting in a polygon shapefile
+Function to add a buffer to LineStrings resulting in a Polygon shapefile
 """
-def add_buffer_generic(objectid_name, distance, buffer_val, file_name, output_file, output_file2):
-    streetid = str(objectid_name)
+def add_buffer_generic(streetid, distance, buffer_val, file_name, output_file, output_file2):
 
-    divide_lines(streetid, distance, float(buffer_val), file_name, output_file)
+    # Split streets at set distance interval
+    divide_lines(streetid, distance, file_name, output_file)
 
     # Edit file to include all fields
-    output_file_name = output_file + ".shp"
-    SHP_DIR = "/home/dstock/tethysdev/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/" + output_file + '/'
-    for file in os.listdir(SHP_DIR):
-        # Reading the output shapefile only
-        if file.endswith(output_file_name):
-            output_file_path = os.path.join(SHP_DIR, file)
+    output_file_path = find_file(output_file, (output_file + ".shp"))
+
     this_output = gpd.read_file(output_file_path)
     this_output.fillna(0, inplace=True)
 
-    SHP_DIR = "/home/dstock/tethysdev/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/" + file_name + '/'
-    for file in os.listdir(SHP_DIR):
-        # Reading the output shapefile only
-        if file.endswith(".shp"):
-            input_file_path = os.path.join(SHP_DIR, file)
+    input_file_path = find_file(file_name, ".shp")
     this_input = gpd.read_file(input_file_path)
     this_input = this_input.drop(columns=['geometry'])
     this_input.fillna(0, inplace=True)
@@ -38,174 +29,142 @@ def add_buffer_generic(objectid_name, distance, buffer_val, file_name, output_fi
     streets_with_info = this_output.merge(this_input, on=streetid)
 
     # Check if the dataframe is empty and if not export to shapefile
-    if streets_with_info.empty:
-        print("Dataframe is empty")
-    else:
-        # Set the working directory
-        SHP_DIR = "/home/dstock/tethysdev/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/" + output_file + '/'
-        os.chdir(SHP_DIR)
-        # Clear existing files
+    if not streets_with_info.empty:
+        mk_change_directory(output_file)
+        streets_with_info.to_file(filename=(output_file + ".shp"), overwrite=True)
 
-        for file in os.listdir(SHP_DIR):
-            os.remove(file)
-        file_name = output_file + ".shp"
-        streets_with_info.to_file(filename=file_name, overwrite=True)
+    buffer_lines(streetid, buffer_val, output_file, output_file2)
+    max_water_depth2(streetid, output_file, output_file2, output_file, 'Max_Depth')
 
-    divided_file = output_file
-    buffer_lines(objectid_name, buffer_val, output_file, output_file2, 'Max_Depth')
-    max_water_depth2(objectid_name, buffer_val, divided_file, output_file2, output_file, 'Max_Depth')
 
-    """
-    buffer_val = 1
-    output_file2 = "Streets_CL"
-    divided_file = "Max_Depth"
-    buffer_lines(objectid_name, buffer_val, output_file, output_file2, 'Depth_CL')
-    max_water_depth2(objectid_name, buffer_val, divided_file, output_file2, 'Streets_Inundation', 'Depth_CL')
-    """
-
-def divide_lines(streetid, distance, buffer_val, file_name, output_file):
-
-    # Set the working directory
-    SHP_DIR = "/home/dstock/tethysdev/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/" + file_name + '/'
-    os.chdir(SHP_DIR)
-
-    output_file_name = output_file + ".shp"
+"""
+Function to divide streets at set distances and output as shapefile
+"""
+def divide_lines(streetid, distance, file_name, output_file):
+    mk_change_directory(file_name)
 
     # Reading in the lines shapefile
-    for file in os.listdir(SHP_DIR):
-        # Reading the shapefile only
-        if file.endswith(".shp"):
-            line_file = os.path.join(SHP_DIR, file)
+    line_file = find_file(file_name, ".shp")
 
     # Read the line shapefile and add a new field 'max_depth'
     with fiona.open(line_file, 'r') as source:
 
+        # Set the output file
         this_schema = {'properties': OrderedDict([(streetid, 'float:19.11'),
-                                                  ('Max_Depth', 'float:19.11'),
-                                                  ('Depth_CL', 'float:19.11')]),
+                                                  ('Index', 'float:19.11'),
+                                                  ('Max_Depth', 'float:19.11')]),
                        'geometry': ['LineString']}
         source_crs = source.crs
-        # Set the output file
-        SHP_DIR = "/home/dstock/tethysdev/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/" + output_file + '/'
-        try:
-            os.mkdir(SHP_DIR)
-        except OSError:
-            print("Creation of the directory %s failed" % SHP_DIR)
-        else:
-            print("Successfully created the directory %s " % SHP_DIR)
-        os.chdir(SHP_DIR)
+
+        # Starting value for new index field
+        index = 1
+
+        # Create a directory for the output file
+        mk_change_directory(output_file)
+
         # Output file for total street width
-        with fiona.open(output_file_name, 'w', driver='ESRI Shapefile',
+        with fiona.open((output_file + ".shp"), 'w', driver='ESRI Shapefile',
                         crs=source_crs, schema=this_schema) as output:
             # Iterate over each line in line file
             for line in source:
-                if line['geometry']['type'] == 'LineString':
-                    line_shape = shape(line['geometry'])
-
-                    # Split the LineString at the points list
-                    multiline_list = split_line_with_points(line_shape, distance, buffer_val)
-
-                    for oneline in multiline_list:
-                        if oneline.type == "LineString":
-                            output.write({'geometry': mapping(oneline),
-                                          'type': oneline.geom_type,
-                                          'properties': {streetid: line['properties'][streetid],
-                                                         'Max_Depth': 0,
-                                                         'Depth_CL': 0}})
-                        elif oneline.type == "MultiLineString":
-                            for multiline in oneline:
-                                output.write({'geometry': mapping(multiline),
-                                              'type': multiline.geom_type,
-                                              'properties': {streetid: line['properties'][streetid],
-                                                             'Max_Depth': 0,
-                                                             'Depth_CL': 0}})
-                elif line['geometry']['type'] == 'MultiLineString':
-                    line_shape = shape(line['geometry'])
-
-                    line_shape_list = list(line_shape)
-                    for lines in line_shape_list:
-
-                        # Split the LineString at the points list
-
-                        multiline_list = split_line_with_points(lines, distance, buffer_val)
-
-                        for oneline in multiline_list:
-                            if oneline.type == "LineString":
-                                output.write({'geometry': mapping(oneline),
-                                              'type': oneline.geom_type,
-                                              'properties': {streetid: line['properties'][streetid],
-                                                             'Max_Depth': 0,
-                                                             'Depth_CL': 0}})
-                            elif oneline.type == "MultiLineString":
-                                for multiline in oneline:
-                                    output.write({'geometry': mapping(multiline),
-                                                  'type': multiline.geom_type,
-                                                  'properties': {streetid: line['properties'][streetid],
-                                                                 'Max_Depth': 0,
-                                                                 'Depth_CL': 0}})
+                index = identify_lines(line, output, distance, index, streetid)
 
 
-def buffer_lines(objectid_name, buffer_val, output_file, output_file2, field):
+"""
+Function called by divide_lines to break line down to LineStrings and split lines
+"""
+def identify_lines(line, output, distance, index, streetid):
+    if line['geometry']['type'] == "LineString":
+        line_shape = shape(line['geometry'])
+        multiline_list = split_line_with_points(line_shape, distance)
+        index = iterate_list(multiline_list, output, streetid, line, index)
+    elif line['geometry']['type'] == 'MultiLineString':
+        line_shape = shape(line['geometry'])
+        line_shape_list = list(line_shape)
+        for lines in line_shape_list:
+            multiline_list = split_line_with_points(lines, distance)
+            index = iterate_list(multiline_list, output, streetid, line, index)
 
-    # Set the working directory
-    file_name = output_file
-    SHP_DIR = "/home/dstock/tethysdev/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/" + file_name + '/'
-    os.chdir(SHP_DIR)
+    return index
 
+
+"""
+Function called by identify_lines to iterate through a LineString list to output LineStrings
+"""
+def iterate_list(multiline_list, output, streetid, line, index):
+    for oneline in multiline_list:
+        if oneline.type == "LineString":
+            index = output_linestring(oneline, output, streetid, line, index)
+        elif oneline.type == "MultiLineString":
+            for singleline in oneline:
+                index = output_linestring(singleline, output, streetid, line, index)
+    return index
+
+
+"""
+Function which writes a LineString to shapefile
+"""
+def output_linestring(oneline, output, streetid, line, index):
+    output.write({'geometry': mapping(oneline),
+                  'type': oneline.geom_type,
+                  'properties': {streetid: line['properties'][streetid],
+                                 'Index': index,
+                                 'Max_Depth': 0}})
+    index += 1
+    return index
+
+
+"""
+Function to buffer or remove buffer from streets
+"""
+def buffer_lines(objectid_name, buffer_val, output_file, output_file2):
+
+    mk_change_directory(output_file)
+
+    # Cast OBJECTID field as string
     streetid = str(objectid_name)
 
     # Reading in the lines shapefile
-    for file in os.listdir(SHP_DIR):
-        # Reading the shapefile only
-        if file.endswith(".shp"):
-            line_file = os.path.join(SHP_DIR, file)
+    line_file = find_file(output_file, ".shp")
 
     # Read the line shapefile and add a new field 'max_depth'
     with fiona.open(line_file, 'r') as source:
 
-        this_schema = {'properties': OrderedDict([(streetid, 'float:19.11'),
-                                                  (field, 'float:19.11')]),
-                       'geometry': ['Polygon']}
-        if float(buffer_val)<0:
-            this_schema = {'properties': OrderedDict([(field, 'float:19.11')]),
-                           'geometry': ['Polygon']}
-        source_crs = source.crs
         # Set the output file
-        file_name = output_file2
+        this_schema = {'properties': OrderedDict([(streetid, 'float:19.11'),
+                                                  ('Index', 'float:19.11'),
+                                                  ('Max_Depth', 'float:19.11')]),
+                       'geometry': ['Polygon']}
+        source_crs = source.crs
+
+        # Create a directory for the output
         output_file_name = output_file2 + ".shp"
-        SHP_DIR = "/home/dstock/tethysdev/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/" + file_name + '/'
-        try:
-            os.mkdir(SHP_DIR)
-        except OSError:
-            print("Creation of the directory %s failed" % SHP_DIR)
-        else:
-            print("Successfully created the directory %s " % SHP_DIR)
-        os.chdir(SHP_DIR)
-        # Output file for total street width
+        mk_change_directory(output_file2)
+
+        # Output buffered file
         with fiona.open(output_file_name, 'w', driver='ESRI Shapefile',
                         crs=source_crs, schema=this_schema) as output:
             # Iterate over each line in line file
+            index = 1
             for line in source:
                 if line['geometry']['type'] == 'LineString':
                     line_shape = shape(line['geometry'])
                     line_buffer = line_shape.buffer(float(buffer_val))
-                    output.write({'geometry': mapping(line_buffer),
-                                  'type': line_buffer.geom_type,
-                                  'properties': {streetid: line['properties'][streetid],
-                                                 field: 0}})
-                elif float(buffer_val)<0 and line['geometry']['type'] == 'Polygon':
-                    line_shape = shape(line['geometry'])
-                    line_buffer = line_shape.buffer(float(buffer_val))
-                    output.write({'geometry': mapping(line_buffer),
-                                  'type': line_buffer.geom_type,
-                                  'properties': {field: line['properties'][field]}})
+                    index = output_linestring(line_buffer, output, streetid, line, index)
                 else:
                     print(line['geometry']['type'])
 
 
+"""
+Function to cut line at specified distance, returning two LineStrings
+"""
 def cut(line, distance):
+
+    # Check that distance is within line
     if distance <= 0.0 or distance >= line.length:
         return[LineString(line)]
+
+    # Cut line
     coords = list(line.coords)
     for i, p in enumerate(coords):
         pd = line.project(Point(p))
@@ -219,50 +178,37 @@ def cut(line, distance):
                 LineString(coords[:i] + [(cp.x, cp.y)]),
                 LineString([(cp.x, cp.y)] + coords[i:])]
 
-def split_line_with_points(line, d, buffer_val):
+"""
+Function to call cut function if sufficient length remaining in line
+"""
+def split_line_with_points(line, d):
     segments = []
     current_line = line
-
     d_current = d
-    if d_current < (line.length-buffer_val):
-        seg, current_line = cut(current_line, d)
-        segments.append(seg)
-    else:
-        segments.append(line)
 
-    while d_current < line.length:
-        d_current += d
-        if (d_current < line.length-buffer_val):
+    while True:
+        if d_current < (line.length):
             seg, current_line = cut(current_line, d)
             segments.append(seg)
+            d_current += d
         else:
             segments.append(current_line)
+            break
 
     return segments
 
 """
 Function to populate the Max Depth field based on raster data
 """
-
-def max_water_depth2(objectid, buffer_val, divided_file, output_file2, location, field):
+def max_water_depth2(objectid, divided_file, output_file2, location, field):
     # Set the working directory
-    file_name = output_file2
-    SHP_DIR = "/home/dstock/tethysdev/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/"+file_name+'/'
-    os.chdir(SHP_DIR)
-    output_file_name = output_file2 + ".shp"
-    for file in os.listdir(SHP_DIR):
-        # Reading the polygon shapefiles only
-        if file.endswith(output_file_name):
-            f_path = os.path.join(SHP_DIR, file)
+    mk_change_directory(output_file2)
+    f_path = find_file(output_file2, (output_file2 + ".shp"))
 
     with fiona.open(f_path, 'r') as polygon_file:
-        file_name = "Inundation_Raster"
-        SHP_DIR = "/home/dstock/tethysdev/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/" + file_name + '/'
-        os.chdir(SHP_DIR)
-        for file in os.listdir(SHP_DIR):
-            # Reading the raster only
-            if file.endswith(".tif"):
-                rasters = os.path.join(SHP_DIR, file)
+        mk_change_directory("Inundation_Raster")
+        rasters = find_file("Inundation_Raster", ".tif")
+
         with rasterio.open(rasters) as raster_file:
 
             transform = raster_file.transform
@@ -283,106 +229,63 @@ def max_water_depth2(objectid, buffer_val, divided_file, output_file2, location,
 
             # Add max depth to max depth field and export raster stats to a shapefile
             raster_stats_dataframe = gpd.GeoDataFrame.from_features(raster_stats)
-            print(field)
-            print(raster_stats_dataframe.head())
-            print(raster_stats_dataframe.dtypes)
-            print(raster_stats_dataframe.shape)
+
             if not raster_stats_dataframe.empty:
                 raster_stats_dataframe[field] = raster_stats_dataframe['max']
-
                 raster_stats_dataframe = raster_stats_dataframe.drop(columns=['mini_raster_array', 'mini_raster_affine', 'mini_raster_nodata', 'max', objectid])
 
-                file_name = "Street_Depth"
-                if raster_stats_dataframe.empty:
-                    print("Dataframe is empty")
-                else:
-                    # Set the working directory
-                    SHP_DIR = "/home/dstock/tethysdev/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/" + file_name + '/'
-                    try:
-                        os.mkdir(SHP_DIR)
-                    except OSError:
-                        print("Creation of the directory %s failed" % SHP_DIR)
-                    else:
-                        print("Successfully created the directory %s " % SHP_DIR)
-                    os.chdir(SHP_DIR)
-                    raster_stats_dataframe.to_file(filename="Street_Depth.shp")
-
-                buffer_val = (float(buffer_val)-1)*(-1)
-                buffer_lines(objectid, buffer_val, file_name, "Streets_unbuffered", field)
-
-                spatial_join2("Streets_unbuffered", divided_file, location, field)
+                spatial_join2(raster_stats_dataframe, divided_file, location, field)
 
 
 
 """
-Function called by max_depth which joins the Max_Depth field to the input buildings shapefile
+Function called by max_depth which joins the Max_Depth field to the input streets shapefile
 """
-
-def spatial_join2(streets_unbuffered, divided_file, location, field):
+def spatial_join2(raster_stats_dataframe, divided_file, location, field):
     # Set the working directory
-    file_name = location
-    input_file_name = divided_file + ".shp"
-    output_file_name = field+".shp"
-    SHP_DIR = "/home/dstock/tethysdev/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/"+file_name+'/'
-    os.chdir(SHP_DIR)
+    mk_change_directory(location)
 
-    for file in os.listdir(SHP_DIR):
-        # Reading the streets cl shapefile only
-        if file.endswith(input_file_name):
-            streets_divided = os.path.join(SHP_DIR, file)
-
-    file_name = streets_unbuffered
-    SHP_DIR = "/home/dstock/tethysdev/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/" + file_name + '/'
-    os.chdir(SHP_DIR)
-
-    for file in os.listdir(SHP_DIR):
-        # Reading the streets cl shapefile only
-        if file.endswith(".shp"):
-            depth_file = os.path.join(SHP_DIR, file)
-
-    depth_file = gpd.read_file(depth_file)
-    depth_file.fillna(0, inplace=True)
-
-    # Read in building shapefile and fill null values with 0
+    # Read in the streets shapefile
+    streets_divided = find_file(location, (divided_file + ".shp"))
     streets_file = gpd.read_file(streets_divided)
-    #streets_file = streets_file.drop(columns=[field, objectid])
     streets_file.fillna(0, inplace=True)
-
-    # Merge original buildings dataframe with depth table
-
     streets_file = streets_file.drop(columns=[field])
 
-    print("DROPPED COLS DEPTH")
-    print(depth_file.head())
-    print(depth_file.dtypes)
-    print(depth_file.shape)
-    print("DROPPED COLS STREETS")
-    print(streets_file.head())
-    print(streets_file.dtypes)
-    print(streets_file.shape)
+    # Read in the zonal stats dataframe with max depth
+    depth_file = raster_stats_dataframe
+    depth_file.fillna(0, inplace=True)
+    selected_cols = ['Index', field]
+    depth_file = depth_file[selected_cols]
 
-    join_file = depth_file
-    target_file = streets_file
-    streets_with_depth = sjoin(join_file, target_file, how='right', op='contains')
-    streets_with_depth = streets_with_depth.dissolve(by='index_left', aggfunc='first')
-
-    print("MERGE")
-    print(streets_with_depth.head())
-    print(streets_with_depth.dtypes)
-    print(streets_with_depth.shape)
+    # Merge streets dataframe with depth dataframe
+    streets_with_depth = streets_file.merge(depth_file, on='Index')
 
     # Check if the dataframe is empty and if not export to shapefile
-    if streets_with_depth.empty:
-        print("Dataframe is empty")
+    if not streets_with_depth.empty:
+        mk_change_directory("Streets_Inundation")
+        streets_with_depth.to_file(filename=("Streets_Inundation.shp"))
+
+"""
+Function to make a directory if it does not exist and change directories
+"""
+def mk_change_directory(file_name):
+    SHP_DIR = "/home/dstock/tethysdev/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/" + file_name + '/'
+    try:
+        os.mkdir(SHP_DIR)
+    except OSError:
+        print("Creation of the directory %s failed" % SHP_DIR)
     else:
-        # Set the working directory
-        file_name = "Streets_Inundation"
-        SHP_DIR = "/home/dstock/tethysdev/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/" + file_name + '/'
-        try:
-            os.mkdir(SHP_DIR)
-        except OSError:
-            print("Creation of the directory %s failed" % SHP_DIR)
-        else:
-            print("Successfully created the directory %s " % SHP_DIR)
-        os.chdir(SHP_DIR)
-        streets_with_depth.to_file(filename=output_file_name)
+        print("Successfully created the directory %s " % SHP_DIR)
+    os.chdir(SHP_DIR)
+
+"""
+Function to find file of specified file type in directory
+"""
+def find_file(file_name, ending):
+    SHP_DIR = "/home/dstock/tethysdev/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/" + file_name + '/'
+    for file in os.listdir(SHP_DIR):
+        # Reading the output shapefile only
+        if file.endswith(ending):
+            file_path = os.path.join(SHP_DIR, file)
+            return file_path
+

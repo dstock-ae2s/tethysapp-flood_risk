@@ -5,6 +5,7 @@ var objectid_field;
 var tax_field;
 var taxid_field;
 var distance;
+var street_buffer;
 var streetid_field;
 
 
@@ -341,10 +342,10 @@ street_risk = function(data) {
 process_streets = function(data) {
 
     streetid_field = document.getElementById("streetid-field").value;
+    buffer = document.getElementById("street-buffer").value;
 
     var data = new FormData();
     data.append("streetid_field", streetid_field)
-    buffer = 20
     data.append("buffer", buffer);
     distance = document.getElementById("distance-input").value;
     data.append("distance", distance);
