@@ -90,48 +90,13 @@ def layer_gen(request):
     Controller for the Flood Risk Layer Generation Page
     """
     # Define form gizmos
-    
-    add_button_raster = Button(
-        display_text='Upload Inundation Raster',
-        name='add-button',
+
+    submit_buildings = Button(
+        display_text='Submit',
+        name='submit-buildings',
         icon='glyphicon glyphicon-plus',
         style='success',
-        attributes={'id': 'submit-depth'},
-    )
-    add_button_land = Button(
-        display_text='Upload Landuse Shapefile',
-        name='add-button-land',
-        icon='glyphicon glyphicon-plus',
-        style='success',
-        attributes={'id': 'submit-land'},
-    )
-    add_button_tax = Button(
-        display_text='Upload Tax Parcel Shapefile',
-        name='add-button-tax',
-        icon='glyphicon glyphicon-plus',
-        style='success',
-        attributes={'id': 'submit-tax'},
-    )
-    process_tax = Button(
-        display_text='Perform Tax Analysis',
-        name='process-tax',
-        icon='glyphicon glyphicon-plus',
-        style='success',
-        attributes={'id': 'submit-process-tax'},
-    )
-    process_land = Button(
-        display_text='Perform Land Use Analysis',
-        name='process-land',
-        icon='glyphicon glyphicon-plus',
-        style='success',
-        attributes={'id': 'submit-process-land'},
-    )
-    add_button_shapefile = Button(
-        display_text='Upload Building Shapefile',
-        name='add-button-shapefile',
-        icon='glyphicon glyphicon-plus',
-        style='success',
-        attributes={'id': 'submit-building'},
+        attributes={'id': 'submit-buildings'},
     )
     buffer_input = TextInput(
         display_text='Buffer',
@@ -141,13 +106,8 @@ def layer_gen(request):
     )
 
     context = {
-        'add_button_raster':add_button_raster,
-        'add_button_land':add_button_land,
-        'add_button_tax':add_button_tax,
-        'buffer_input':buffer_input,
-        'add_button_shapefile':add_button_shapefile,
-        'process_tax':process_tax,
-        'process_land': process_land
+        'buffer_input': buffer_input,
+        'submit_buildings': submit_buildings,
     }
 
     return render(request, 'flood_risk/layer_gen.html', context)
@@ -159,9 +119,9 @@ def risk_analysis(request):
     """
 
     # Define form gizmos
-    add_button_streets = Button(
-        display_text='Upload Street Centerline Shapefile',
-        name='add-button-streets',
+    submit_streets = Button(
+        display_text='Submit',
+        name='submit-streets',
         icon='glyphicon glyphicon-plus',
         style='success',
         attributes={'id': 'submit-streets'},
@@ -178,18 +138,10 @@ def risk_analysis(request):
         placeholder=0.5,
         attributes={'id': 'street-buffer'}
     )
-    add_button_streetid = Button(
-        display_text='Upload Street ID Field',
-        name='add-button-streetid',
-        icon='glyphicon glyphicon-plus',
-        style='success',
-        attributes={'id': 'submit-streetid'},
-    )
     context = {
-        'add_button_streets':add_button_streets,
         'distance_input':distance_input,
         'street_buffer':street_buffer,
-        'add_button_streetid': add_button_streetid
+        'submit_streets':submit_streets,
     }
 
     return render(request, 'flood_risk/risk_analysis.html', context)

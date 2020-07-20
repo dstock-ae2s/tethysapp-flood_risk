@@ -11,12 +11,15 @@ import numpy as np
 from osgeo import gdal
 import geopandas as gpd
 from geopandas.tools import sjoin
+from .utilities import *
 
 
 """
 Function which joins tax parcel values to building inundation shapefile
 """
 def tax_join(objectid_name, taxid_name, tax_val, f_path):
+    not_empty_file = True
+
     # Set the working directory and find building inundation shapefile
     file_name = "Buildings_Inundation"
     SHP_DIR = "/home/dstock/tethysdev/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/"+file_name+'/'
@@ -52,9 +55,7 @@ def tax_join(objectid_name, taxid_name, tax_val, f_path):
     target_file = value_lost(target_file)
 
     # Check if the dataframe is empty and if not export to shapefile
-    if target_file.empty:
-        print("Dataframe is empty")
-    else:
+    if not target_file.empty:
         file_name = "Parcel_Inundation"
         SHP_DIR = "/home/dstock/tethysdev/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/" + file_name + '/'
         try:
@@ -65,6 +66,13 @@ def tax_join(objectid_name, taxid_name, tax_val, f_path):
             print("Successfully created the directory %s " % SHP_DIR)
         os.chdir(SHP_DIR)
         target_file.to_file("Parcel_Inundation.shp")
+
+
+        output_path = find_file("Parcel_Inundation", ".shp")
+        if not os.stat(output_path).st_size == 0:
+            not_empty_file = False
+
+    return not_empty_file
 
 """
 Function which adds field to dataframe calculating building value lost due to flood depth

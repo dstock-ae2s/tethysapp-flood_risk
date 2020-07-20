@@ -4,52 +4,59 @@
 
 {% block app_content %}
     <h1>Building Risk</h1>
-    <form action="" method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        <div class="form-group shp_upload">
-            <label class ="control-label" for="shp-upload-input">Building Shapefile</label>
-            <input id ="shp-upload-input" name="shp-upload-input" oninput="this.className = ''" placeholder="Shapefile" type="file" accept = ".shp, .shx, .prj, .dbf" multiple>
-        </div>
+
+            <label class ="control-label" for="bldg-shp-upload-input">Building Shapefile</label>
+            <br>
+            <input id ="bldg-shp-upload-input" class="shp-upload-input" name="bldg-shp-upload-input" style="display:inline-block;" type="file" accept = ".shp, .shx, .prj, .dbf" multiple>
+
+            <div id="bldgid-select" style="display:inline-block;">
+            <label for="bldg-field-select-0" style="padding-rigth:5px;">Building ID Field:</label>
+                <select id="bldg-field-select-0">
+                    <option value="">Select Field</option>
+                </select>
+            </div>
+        <br><br>
+
         {% gizmo buffer_input %}
-        {% gizmo button add_button_shapefile %}
-        <div class="objectid-select" style="width:200px;" id="objectid-select">
-            <select id="objectid-field">
-            </select>
-        </div>
-        <div class="form-group raster_upload">
-            <label class ="control-label" for="raster-upload-input">Flood Depth Raster</label>
-            <input id ="raster-upload-input" name="raster-upload-input" placeholder="Raster" type="file" accept = ".tif, .tfw, .xml, .ovr" multiple>
-        {% gizmo button add_button_raster %}
-        <div class="form-group tax_upload">
-        <label class ="control-label" for="tax-upload-input">Tax Parcel Shapefile</label>
-        <input id ="tax-upload-input" name="tax-upload-input" oninput="this.className = ''" placeholder="Shapefile" type="file" accept = ".shp, .shx, .prj, .dbf, .cpg, .sbn, .sbx, .xml" multiple>
-        </div>
-        {% gizmo button add_button_tax %}
-        <div class="taxid-select" style="width:200px;" id="taxid-select">
-        <select id="taxid-field">
-        </select>
-        </div>
-        <div class="tax-select" style="width:200px;" id="tax-select">
-        <select id="tax-field">
-        </select>
-        </div>
-        {% gizmo button process_tax %}
-        <div class="form-group land_upload">
-        <label class ="control-label" for="land-upload-input">Land Use Shapefile</label>
-        <input id ="land-upload-input" name="land-upload-input" oninput="this.className = ''" placeholder="Shapefile" type="file" accept = ".shp, .shx, .prj, .dbf, .cpg, .sbn, .sbx, .xml" multiple>
-        </div>
-        {% gizmo button add_button_land %}
-        <div class="landid-select" style="width:200px;" id="landid-select">
-        <select id="landid-field">
-        </select>
-        </div>
-        <div class="land-select" style="width:200px;" id="land-select">
-        <select id="land-field">
-        </select>
-        </div>
-        {% gizmo button process_land %}
-        <input name="submit" type="submit" class="btn btn-default">
-    </form>
+
+            <label class ="control-label" for="depth-shp-upload-input">Inundation Raster</label>
+            <br>
+            <input id ="depth-shp-upload-input" class="shp-upload-input" name="depth-shp-upload-input" style="display:inline-block;" type="file" accept = ".tif, .tfw, .xml, .ovr" multiple>
+        <br><br>
+
+            <label class ="control-label" for="tax-shp-upload-input">Tax Parcel Shapefile</label>
+            <br>
+            <input id ="tax-shp-upload-input" class="shp-upload-input" name="tax-shp-upload-input" style="display:inline-block;" type="file" accept = ".shp, .shx, .prj, .dbf" multiple>
+            <div id="taxid-select" style="display:inline-block;">
+            <label for="tax-field-select-0" style="padding-rigth:5px;">Tax Parcel ID Field:</label>
+                <select id="tax-field-select-0">
+                    <option value="">Select Field</option>
+                </select>
+            <br>
+            <label for="tax-field-select-1" style="padding-rigth:5px;">Tax Parcel Value Field:</label>
+                <select id="tax-field-select-1">
+                    <option value="">Select Field</option>
+                </select>
+            </div>
+        <br><br>
+
+            <label class ="control-label" for="landuse-shp-upload-input">Land Use Shapefile</label>
+            <br>
+            <input id ="landuse-shp-upload-input" class="shp-upload-input" name="landuse-shp-upload-input" style="display:inline-block;" type="file" accept = ".shp, .shx, .prj, .dbf" multiple>
+            <div id="landuseid-select" style="display:inline-block;">
+            <label for="landuse-field-select-0" style="padding-rigth:5px;">Land Use ID Field:</label>
+                <select id="landuse-field-select-0">
+                    <option value="">Select Field</option>
+                </select>
+            <br>
+            <label for="landuse-field-select-1" style="padding-rigth:5px;">Land Use Field:</label>
+                <select id="landuse-field-select-1">
+                    <option value="">Select Field</option>
+                </select>
+            </div>
+        <br><br>
+        {% gizmo button submit_buildings %}
+
 {% endblock %}
 
 {% block after_app_content %}

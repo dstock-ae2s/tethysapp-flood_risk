@@ -206,8 +206,8 @@ def max_water_depth2(objectid, divided_file, output_file2, location, field):
     f_path = find_file(output_file2, (output_file2 + ".shp"))
 
     with fiona.open(f_path, 'r') as polygon_file:
-        mk_change_directory("Inundation_Raster")
-        rasters = find_file("Inundation_Raster", ".tif")
+        mk_change_directory("depth_file")
+        rasters = find_file("depth_file", ".tif")
 
         with rasterio.open(rasters) as raster_file:
 

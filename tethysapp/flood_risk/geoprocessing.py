@@ -10,7 +10,8 @@ from .max_depth import *
 """
 Convert polygon shapefile to lines shapefile
 """
-def polygon_to_line(shapefile, file_name):
+def polygon_to_line(shapefile, file_name, id_field):
+    not_empty_file = True
 
     # Set the working directory
     SHP_DIR = "/home/dstock/tethysdev/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/"+file_name+'/'
@@ -18,7 +19,7 @@ def polygon_to_line(shapefile, file_name):
 
     # Open the Buildings shapefile
     with fiona.open(shapefile) as source:
-        this_schema = {'properties': OrderedDict([('OBJECTID', 'float:19.11'),
+        this_schema = {'properties': OrderedDict([(id_field, 'float:19.11'),
                                                   ('Shape_Leng', 'float:19.11'),
                                                   ('Shape_Area', 'float:19.11'),
                                                   ('Max_Depth', 'float:19.11')]),
@@ -50,7 +51,7 @@ def polygon_to_line(shapefile, file_name):
                                 # Save each LineString to the lines shapefile
                                 output.write({'geometry': mapping(line),
                                               'type': line.geom_type,
-                                              'properties': {'OBJECTID': polys['properties']['OBJECTID'],
+                                              'properties': {id_field: polys['properties'][id_field],
                                                              'Shape_Leng': line.length,
                                                              'Shape_Area': line.area,
                                                              'Max_Depth': 0}})
@@ -58,7 +59,7 @@ def polygon_to_line(shapefile, file_name):
                             # Save each LineString to the lines shapefile
                             output.write({'geometry': mapping(boundary),
                                           'type': boundary.geom_type,
-                                          'properties': {'OBJECTID': polys['properties']['OBJECTID'],
+                                          'properties': {id_field: polys['properties'][id_field],
                                                          'Shape_Leng': boundary.length,
                                                          'Shape_Area': boundary.area,
                                                          'Max_Depth': 0}})
@@ -72,7 +73,7 @@ def polygon_to_line(shapefile, file_name):
                             # Save each LineString to the lines shapefile
                             output.write({'geometry': mapping(line),
                                           'type': line.geom_type,
-                                          'properties': {'OBJECTID': polys['properties']['OBJECTID'],
+                                          'properties': {id_field: polys['properties'][id_field],
                                                         'Shape_Leng': line.length,
                                                         'Shape_Area': line.area,
                                                         'Max_Depth': 0}})
@@ -80,23 +81,15 @@ def polygon_to_line(shapefile, file_name):
                         # Save each LineString to the lines shapefile
                         output.write({'geometry': mapping(boundary),
                                       'type': boundary.geom_type,
-                                      'properties': {'OBJECTID': polys['properties']['OBJECTID'],
+                                      'properties': {id_field: polys['properties'][id_field],
                                                     'Shape_Leng':boundary.length,
                                                     'Shape_Area': boundary.area,
                                                     'Max_Depth': 0}})
 
+            output_path = find_file("Building_Outlines", ".shp")
+            if not os.stat(output_path).st_size == 0:
+                not_empty_file = False
+                return not_empty_file
 
-    """
-    for elem in boundary:
-        reconstruct = shape(elem['geometry'])
-        print("elem")
-        print(elem_bound['geometry']['type'])
-        if elem['geometry']['type']== 'MultiLineString':
-            print("Inner if statement)")
-            for line in reconstruct:
-                output.write({'geometry':mapping(line), 'properties':elem['properties']})
-        elif elem['geometry']['type']=='LineString':
-            output.write({'geometry':mapping(reconstruct), 'properties':elem['properties']})
-            print("In elif")
-    """
+    return not_empty_file
 

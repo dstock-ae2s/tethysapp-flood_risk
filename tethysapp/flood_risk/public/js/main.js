@@ -1,7 +1,7 @@
 var building_risk;
 var line_file;
 var buffer;
-var objectid_field;
+var buildingid_field;
 var tax_field;
 var taxid_field;
 var distance;
@@ -109,261 +109,157 @@ function ajax_update_database_with_file(ajax_url, ajax_data,div_id) {
     return xhr;
 }
 
+function hideShowFieldDivs(div_id){
+    if(document.getElementById(div_id).style.display == "none"){
+        document.getElementById(div_id).style.display == "block";
+    }
+};
 
-upload_building_file = function(){
-    var shapefiles = $("#shp-upload-input")[0].files;
+function checkNumberOfFields(dropdown_id, div_id){
+    var num_fields = $('#'+dropdown_id).val();
+    for(var i = 1, l = 2; i <= l; ++i){
+        document.getElementById(div_id+i).style.display = "none";
+    }
+    for(var i = 1, l = num_fields; i <= l; ++i){
+        hideShowFieldDivs(div_id + i);
+    }
+};
+
+function uploadFileNoFields(file_upload_id, file_name){
+    var shapefiles = $(file_upload_id)[0].files;
 
     //Preparing data to be submitted via AJAX POST request
     var data = new FormData();
+    data.append("file_name", file_name);
+    for (var i=0; i< shapefiles.length; i++){
+        data.append("shapefile", shapefiles[i])
+    }
+
+    file_upload_process_no_fields(file_upload_id, data);
+};
+
+function file_upload_process_no_fields(file_upload_id, data){
+    var file_upload = ajax_update_database_with_file("file-upload-move-files", data); //Submitting the data through the ajax function, see main.js for the helper function.
+    file_upload.done(function(return_data){
+        if("success" in return_data){
+            var file_upload_button = $(file_upload_id);
+            var file_upload_button_html = file_upload_button.html();
+            file_upload_button.text('File Uploaded');
+        };
+    });
+};
+
+function uploadFile(file_upload_id, file_name, filetype, number_fields){
+    var shapefiles = $(file_upload_id)[0].files;
+
+    //Preparing data to be submitted via AJAX POST request
+    var data = new FormData();
+    data.append("file_name", file_name);
+    data.append("filetype", filetype);
+    for (var i=0; i< shapefiles.length; i++){
+        data.append("shapefile", shapefiles[i])
+    }
+    var field_list=[]
+    for (var j=0; j<number_fields; j++){
+        var n = file_name.slice(0,(file_name.search("_")));
+        field_list[j] = n+'-field-select-'+(j);
+    }
+    console.log(field_list);
+
+    file_upload_process(data, field_list);
+};
+
+function file_upload_process(data, field_list){
+    var file_upload = ajax_update_database_with_file("file-upload", data); //Submitting the data through the ajax function, see main.js for the helper function.
+    file_upload.done(function(return_data){ //Reset the form once the data is added succesfully
+        if("field_names" in return_data){
+            var options = return_data.field_names;
+            console.log(options);
+            console.log(field_list);
+            for(var j=0; j < field_list.length; j++){
+                console.log(field_list.length);
+                var select = document.getElementById(field_list[j]);
+
+                // Clear all existing options first:
+                select.innerHTML = "<option value=\"" + "Select Field" + "\">" + "Select Field" + "</option>";
+
+                // Populate list with options:
+                for(var i = 0; i < options.length; i++){
+                    var opt = options[i];
+                    select.innerHTML += "<option value=\"" + opt + "\">" + opt + "</option>";
+                }
+            };
+        };
+    });
+};
+
+
+process_buildings = function(){
+    var data = new FormData();
+
     buffer = document.getElementById("buffer-input").value;
     data.append("buffer", buffer);
 
-    for (var i=0; i<shapefiles.length; i++){
-        data.append("shapefile", shapefiles[i]);
-    }
+    buildingid_field = document.getElementById("bldg-field-select-0").value;
+    data.append("buildingid_field", buildingid_field);
 
-    var submit_button = $("#submit-building");
-    var submit_button_html = submit_button.html();
-    submit_button.text('Submitting...');
+    taxid_field = document.getElementById("tax-field-select-0").value;
+    data.append("taxid_field", taxid_field);
 
-    building_risk(data);
+    tax_field = document.getElementById("tax-field-select-1").value;
+    data.append("tax_field", tax_field);
 
-};
+    landuseid_field = document.getElementById("landuse-field-select-0").value;
+    data.append("landuseid_field", landuseid_field);
 
-building_risk = function(data) {
+    landuse_field = document.getElementById("landuse-field-select-1").value;
+    data.append("landuse_field", landuse_field);
+
     var bldg_risk = ajax_update_database_with_file("building-process-ajax",data); //Submitting the data through the ajax function, see main.js for the helper function.
 
-    bldg_risk.done(function(return_data){ //Reset the form once the data is added successfully
-        if("field_names" in return_data){
-            var submit_button = $("#submit-building");
-            var submit_button_html = submit_button.html();
-            submit_button.text('Submitted');
-            var options = return_data.field_names;
-
-            var select = document.getElementById("objectid-field")
-
-            // Optional: Clear all existing options first:
-            select.innerHTML="<option value=\""+"Select Bldg OBJECTID Field"+"\">" +"Select Bldg OBJECTID Field"+"</option>";
-            // Populate list with options:
-            for(var i=0; i<options.length; i++){
-                var opt = options[i];
-                select.innerHTML += "<option value=\"" + opt + "\">" + opt + "</option>";
-            }
-        };
-    });
-}
-
-upload_tax_file = function(){
-    var shapefiles = $("#tax-upload-input")[0].files;
-
-    //Preparing data to be submitted via AJAX POST request
-    var data = new FormData();
-
-
-    for (var i=0; i<shapefiles.length; i++){
-        data.append("shapefile", shapefiles[i]);
-    }
-
-    var submit_button = $("#submit-tax");
-    var submit_button_html = submit_button.html();
-    submit_button.text('Submitting...');
-
-    tax_risk(data);
 };
-
-tax_risk = function(data) {
-    var tax_file = ajax_update_database_with_file("tax-process-ajax",data); //Submitting the data through the ajax function, see main.js for the helper function.
-
-    tax_file.done(function(return_data){ //Reset the form once the data is added successfully
-        if("tax_names" in return_data){
-            var submit_button = $("#submit-tax");
-            var submit_button_html = submit_button.html();
-            submit_button.text('Submitted');
-            var options = return_data.tax_names;
-
-            var select = document.getElementById("tax-field")
-
-            // Optional: Clear all existing options first:
-            select.innerHTML="<option value=\""+"Select Tax Parcel Field"+"\">" +"Select Tax Parcel Field"+"</option>";
-            // Populate list with options:
-            for(var i=0; i<options.length; i++){
-                var opt = options[i];
-                select.innerHTML += "<option value=\"" + opt + "\">" + opt + "</option>";
-            }
-
-            select = document.getElementById("taxid-field")
-
-            // Optional: Clear all existing options first:
-            select.innerHTML="<option value=\""+"Select Tax OBJECTID Field"+"\">" +"Select Tax OBJECTID Field"+"</option>";
-            // Populate list with options:
-            for(var i=0; i<options.length; i++){
-                var opt = options[i];
-                select.innerHTML += "<option value=\"" + opt + "\">" + opt + "</option>";
-            }
-        };
-    });
-}
-
-process_tax = function(data) {
-    tax_field = document.getElementById("tax-field").value;
-    taxid_field = document.getElementById("taxid-field").value;
-
-    var data = new FormData();
-    data.append("tax_field", tax_field)
-    data.append("taxid_field", taxid_field)
-
-    var submit_button = $("#submit-process-tax");
-    var submit_button_html = submit_button.html();
-    submit_button.text('Submitted');
-
-    var process_tax_file = ajax_update_database_with_file("tax-process2-ajax",data); //Submitting the data through the ajax function, see main.js for the helper function.
-}
-
-upload_land_file = function(){
-    var shapefiles = $("#land-upload-input")[0].files;
-
-    //Preparing data to be submitted via AJAX POST request
-    var data = new FormData();
-
-    for (var i=0; i<shapefiles.length; i++){
-        data.append("shapefile", shapefiles[i]);
-    }
-
-    var submit_button = $("#submit-land");
-    var submit_button_html = submit_button.html();
-    submit_button.text('Submitting...');
-
-    land_risk(data);
-};
-
-land_risk = function(data) {
-    var land_file = ajax_update_database_with_file("land-process-ajax",data); //Submitting the data through the ajax function, see main.js for the helper function.
-
-    land_file.done(function(return_data){ //Reset the form once the data is added successfully
-        if("land_names" in return_data){
-            var submit_button = $("#submit-land");
-            var submit_button_html = submit_button.html();
-            submit_button.text('Submitted');
-            var options = return_data.land_names;
-
-            var select = document.getElementById("land-field")
-
-            // Optional: Clear all existing options first:
-            select.innerHTML="<option value=\""+"Select Landuse Field"+"\">" +"Select Landuse Field"+"</option>";
-            // Populate list with options:
-            for(var i=0; i<options.length; i++){
-                var opt = options[i];
-                select.innerHTML += "<option value=\"" + opt + "\">" + opt + "</option>";
-            }
-
-            var select = document.getElementById("landid-field")
-
-            // Optional: Clear all existing options first:
-            select.innerHTML="<option value=\""+"Select Landuse ID Field"+"\">" +"Select Landuse ID Field"+"</option>";
-            // Populate list with options:
-            for(var i=0; i<options.length; i++){
-                var opt = options[i];
-                select.innerHTML += "<option value=\"" + opt + "\">" + opt + "</option>";
-            }
-        };
-    });
-}
-
-process_land = function(data) {
-    land_field = document.getElementById("land-field").value;
-    landid_field = document.getElementById("landid-field").value;
-
-    var data = new FormData();
-    data.append("land_field", land_field)
-    data.append("landid_field", landid_field)
-
-    var submit_button = $("#submit-process-land");
-    var submit_button_html = submit_button.html();
-    submit_button.text('Submitted');
-
-    var process_tax_file = ajax_update_database_with_file("land-process2-ajax",data); //Submitting the data through the ajax function, see main.js for the helper function.
-}
-
-raster_file = function(data) {
-    objectid_field = document.getElementById("objectid-field").value;
-    var rasters = $("#raster-upload-input")[0].files;
-    var data = new FormData();
-    for(var i=0; i< rasters.length; i++){
-        data.append("raster", rasters[i]);
-    }
-    data.append("objectid_field", objectid_field)
-    var depth_raster = ajax_update_database_with_file("raster-process-ajax",data); //Submitting the data through the ajax function, see main.js for the helper function.
-
-}
-
-upload_streets_file = function(){
-    var shapefiles = $("#street-upload-input")[0].files;
-
-    //Preparing data to be submitted via AJAX POST request
-    var data = new FormData();
-
-    for (var i=0; i<shapefiles.length; i++){
-        data.append("shapefile", shapefiles[i]);
-    }
-
-    var submit_button = $("#submit-streets");
-    var submit_button_html = submit_button.html();
-    submit_button.text('Submitting...');
-
-    street_risk(data);
-
-};
-
-street_risk = function(data) {
-    var street_risk = ajax_update_database_with_file("streets-process-ajax",data); //Submitting the data through the ajax function, see main.js for the helper function.
-
-    street_risk.done(function(return_data){ //Reset the form once the data is added successfully
-        console.log("In the done")
-        if("streetid_names" in return_data){
-            console.log("In the if")
-            var submit_button = $("#submit-streets");
-            var submit_button_html = submit_button.html();
-            submit_button.text('Submitted');
-            var options = return_data.streetid_names;
-
-            var select = document.getElementById("streetid-field")
-
-            // Optional: Clear all existing options first:
-            select.innerHTML="<option value=\""+"Select Street ID Field"+"\">" +"Select Street ID Field"+"</option>";
-            // Populate list with options:
-            for(var i=0; i<options.length; i++){
-                var opt = options[i];
-                select.innerHTML += "<option value=\"" + opt + "\">" + opt + "</option>";
-            }
-        };
-    });
-}
 
 process_streets = function(data) {
 
-    streetid_field = document.getElementById("streetid-field").value;
-    buffer = document.getElementById("street-buffer").value;
-
     var data = new FormData();
+
+    streetid_field = document.getElementById("street-field-select-0").value;
     data.append("streetid_field", streetid_field)
+
+    buffer = document.getElementById("street-buffer").value;
     data.append("buffer", buffer);
+
     distance = document.getElementById("distance-input").value;
     data.append("distance", distance);
 
-    var submit_button = $("#submit-streetid");
-    var submit_button_html = submit_button.html();
-    submit_button.text('Submitted');
-
-    var process_tax_file = ajax_update_database_with_file("streets-process2-ajax",data); //Submitting the data through the ajax function, see main.js for the helper function.
+    var street_risk = ajax_update_database_with_file("streets-process-ajax",data); //Submitting the data through the ajax function, see main.js for the helper function.
 }
 
-$("#submit-building").click(upload_building_file);
-$("#submit-tax").click(upload_tax_file);
-$("#submit-process-tax").click(process_tax);
-$("#submit-land").click(upload_land_file);
-$("#submit-process-land").click(process_land);
-$("#submit-depth").click(raster_file);
-$("#submit-streets").click(upload_streets_file);
-$("#submit-streetid").click(process_streets);
+$("#submit-buildings").click(process_buildings);
+$("#submit-streets").click(process_streets);
+
+$(function(){
+
+    $('#bldg-shp-upload-input').change(function(){
+        uploadFile('#bldg-shp-upload-input', 'bldg_file', ".shp", 1);
+    });
+
+    $('#depth-shp-upload-input').change(function(){
+        uploadFileNoFields('#depth-shp-upload-input', 'depth_file');
+    });
+
+    $('#tax-shp-upload-input').change(function(){
+        uploadFile('#tax-shp-upload-input', 'tax_file', ".shp", 2);
+    });
+
+    $('#landuse-shp-upload-input').change(function(){
+        uploadFile('#landuse-shp-upload-input', 'landuse_file', ".shp", 2);
+    });
+
+    $('#street-shp-upload-input').change(function(){
+        uploadFile('#street-shp-upload-input', 'street_file', ".shp", 1);
+    });
+
+});
 
 

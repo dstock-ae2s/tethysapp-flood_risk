@@ -45,42 +45,26 @@ class FloodRisk(TethysAppBase):
                 url='flood-risk/layer-gen/layers/building-process-ajax',
                 controller='flood_risk.ajax_controllers.building_process'
             ),
-
-            UrlMap(
-                name='raster_process_ajax',
-                url='layer-gen/layers/raster-process-ajax',
-                controller='flood_risk.ajax_controllers.raster_process'
-            ),
-            UrlMap(
-                name='tax_process_ajax',
-                url='layer-gen/layers/tax-process-ajax',
-                controller='flood_risk.ajax_controllers.tax_process'
-            ),
-            UrlMap(
-                name='tax_process2_ajax',
-                url='layer-gen/layers/tax-process2-ajax',
-                controller='flood_risk.ajax_controllers.tax_process2'
-            ),
-            UrlMap(
-                name='land_process_ajax',
-                url='layer-gen/layers/land-process-ajax',
-                controller='flood_risk.ajax_controllers.land_process'
-            ),
-            UrlMap(
-                name='land_process2_ajax',
-                url='layer-gen/layers/land-process2-ajax',
-                controller='flood_risk.ajax_controllers.land_process2'
-            ),
             UrlMap(
                 name='streets_process_ajax',
                 url='flood-risk/risk-analysis/risks/streets-process-ajax',
                 controller='flood_risk.ajax_controllers.streets_process'
             ),
             UrlMap(
-                name='streets_process2_ajax',
-                url='flood-risk/risk-analysis/risks/streets-process2-ajax',
-                controller='flood_risk.ajax_controllers.streets_process2'
-            )
+                name='file-upload',
+                url='flood-risk/layer-gen/layers/file-upload',
+                controller='flood_risk.ajax_controllers.file_upload'
+            ),
+            UrlMap(
+                name='file-upload-move-files',
+                url='flood-risk/layer-gen/layers/file-upload-move-files',
+                controller='flood_risk.ajax_controllers.file_upload_move_files'
+            ),
+            UrlMap(
+                name='file-upload',
+                url='flood-risk/risk-analysis/risks/file-upload',
+                controller='flood_risk.ajax_controllers.file_upload'
+            ),
         )
 
         return url_maps
