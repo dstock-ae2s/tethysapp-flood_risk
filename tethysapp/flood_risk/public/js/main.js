@@ -233,10 +233,24 @@ process_streets = function(data) {
     data.append("distance", distance);
 
     var street_risk = ajax_update_database_with_file("streets-process-ajax",data); //Submitting the data through the ajax function, see main.js for the helper function.
-}
+};
+
+process_manhole = function(data) {
+
+    var data = new FormData();
+
+    manholeid_field = document.getElementById("manhole-field-select-0").value;
+    data.append("manholeid_field", manholeid_field)
+
+    buffer = document.getElementById("manhole-buffer").value;
+    data.append("buffer", buffer);
+
+    var manhole_risk = ajax_update_database_with_file("manhole-process-ajax",data); //Submitting the data through the ajax function, see main.js for the helper function.
+};
 
 $("#submit-buildings").click(process_buildings);
 $("#submit-streets").click(process_streets);
+$("#submit-manhole").click(process_manhole);
 
 $(function(){
 
@@ -258,6 +272,10 @@ $(function(){
 
     $('#street-shp-upload-input').change(function(){
         uploadFile('#street-shp-upload-input', 'street_file', ".shp", 1);
+    });
+
+    $('#manhole-shp-upload-input').change(function(){
+        uploadFile('#manhole-shp-upload-input', 'manhole_file', ".shp", 1);
     });
 
 });

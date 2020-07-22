@@ -1,4 +1,5 @@
 from tethys_sdk.base import TethysAppBase, url_map_maker
+from tethys_sdk.app_settings import SpatialDatasetServiceSetting
 
 
 
@@ -41,6 +42,11 @@ class FloodRisk(TethysAppBase):
                 controller='flood_risk.controllers.risk_analysis'
             ),
             UrlMap(
+                name='manhole',
+                url='manhole',
+                controller='flood_risk.controllers.manhole'
+            ),
+            UrlMap(
                 name='building_process_ajax',
                 url='flood-risk/layer-gen/layers/building-process-ajax',
                 controller='flood_risk.ajax_controllers.building_process'
@@ -49,6 +55,11 @@ class FloodRisk(TethysAppBase):
                 name='streets_process_ajax',
                 url='flood-risk/risk-analysis/risks/streets-process-ajax',
                 controller='flood_risk.ajax_controllers.streets_process'
+            ),
+            UrlMap(
+                name='manhole_process_ajax',
+                url='flood-risk/manhole/manhole-process-ajax',
+                controller='flood_risk.ajax_controllers.manhole_process'
             ),
             UrlMap(
                 name='file-upload',
@@ -68,3 +79,18 @@ class FloodRisk(TethysAppBase):
         )
 
         return url_maps
+
+    def spatial_dataset_service_settings(self):
+        """
+        spatial_dataset_service_settings method for FloodRisk App
+        """
+        sds_settings = (
+            SpatialDatasetServiceSetting(
+                name='main_geoserver',
+                description='spatial dataset service for app to use',
+                engine=SpatialDatasetServiceSetting.GEOSERVER,
+                required=True,
+            ),
+        )
+
+        return sds_settings

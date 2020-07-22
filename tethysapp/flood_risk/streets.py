@@ -6,35 +6,11 @@ import rasterio
 import rasterstats as rs
 import numpy as np
 import geopandas as gpd
-
-"""
-Function to add a buffer to LineStrings resulting in a Polygon shapefile
-"""
-def add_buffer_generic(streetid, distance, buffer_val, file_name, output_file, output_file2):
-
-    # Split streets at set distance interval
-    divide_lines(streetid, distance, file_name, output_file)
-
-    # Edit file to include all fields
-    output_file_path = find_file(output_file, (output_file + ".shp"))
-
-    this_output = gpd.read_file(output_file_path)
-    this_output.fillna(0, inplace=True)
-
-    input_file_path = find_file(file_name, ".shp")
-    this_input = gpd.read_file(input_file_path)
-    this_input = this_input.drop(columns=['geometry'])
-    this_input.fillna(0, inplace=True)
-
-    streets_with_info = this_output.merge(this_input, on=streetid)
-
-    # Check if the dataframe is empty and if not export to shapefile
-    if not streets_with_info.empty:
-        mk_change_directory(output_file)
-        streets_with_info.to_file(filename=(output_file + ".shp"), overwrite=True)
-
-    buffer_lines(streetid, buffer_val, output_file, output_file2)
-    max_water_depth2(streetid, output_file, output_file2, output_file, 'Max_Depth')
+from .utilities import *
+from osgeo import ogr, osr
+from fiona.crs import from_epsg
+from pyproj.crs import CRS
+from osgeo.osr import SpatialReference
 
 
 """
@@ -46,6 +22,14 @@ def divide_lines(streetid, distance, file_name, output_file):
     # Reading in the lines shapefile
     line_file = find_file(file_name, ".shp")
 
+    # Reading in the crs and converting
+    driver = ogr.GetDriverByName('ESRI Shapefile')
+    dataset = driver.Open(line_file)
+    layer = dataset.GetLayer()
+    spatialRef = layer.GetSpatialRef()
+    dc_crs = CRS.from_wkt(spatialRef.ExportToWkt())
+    fio_crs = dc_crs.to_wkt()
+
     # Read the line shapefile and add a new field 'max_depth'
     with fiona.open(line_file, 'r') as source:
 
@@ -54,7 +38,9 @@ def divide_lines(streetid, distance, file_name, output_file):
                                                   ('Index', 'float:19.11'),
                                                   ('Max_Depth', 'float:19.11')]),
                        'geometry': ['LineString']}
-        source_crs = source.crs
+        source_crs = fio_crs
+        print("SOURCE CRS")
+        print(source_crs)
 
         # Starting value for new index field
         index = 1
@@ -235,6 +221,9 @@ def max_water_depth2(objectid, divided_file, output_file2, location, field):
                 raster_stats_dataframe = raster_stats_dataframe.drop(columns=['mini_raster_array', 'mini_raster_affine', 'mini_raster_nodata', 'max', objectid])
 
                 spatial_join2(raster_stats_dataframe, divided_file, location, field)
+                output_path = find_file("Streets_Inundation", ".shp")
+                if not os.stat(output_path).st_size == 0:
+                    move_geoserver("Streets_Inundation")
 
 
 
@@ -264,28 +253,3 @@ def spatial_join2(raster_stats_dataframe, divided_file, location, field):
     if not streets_with_depth.empty:
         mk_change_directory("Streets_Inundation")
         streets_with_depth.to_file(filename=("Streets_Inundation.shp"))
-
-"""
-Function to make a directory if it does not exist and change directories
-"""
-def mk_change_directory(file_name):
-    SHP_DIR = "/home/dstock/tethysdev/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/" + file_name + '/'
-    try:
-        os.mkdir(SHP_DIR)
-    except OSError:
-        print("Creation of the directory %s failed" % SHP_DIR)
-    else:
-        print("Successfully created the directory %s " % SHP_DIR)
-    os.chdir(SHP_DIR)
-
-"""
-Function to find file of specified file type in directory
-"""
-def find_file(file_name, ending):
-    SHP_DIR = "/home/dstock/tethysdev/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/" + file_name + '/'
-    for file in os.listdir(SHP_DIR):
-        # Reading the output shapefile only
-        if file.endswith(ending):
-            file_path = os.path.join(SHP_DIR, file)
-            return file_path
-

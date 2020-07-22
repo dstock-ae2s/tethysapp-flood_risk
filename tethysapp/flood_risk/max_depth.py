@@ -34,7 +34,6 @@ def add_buffer(buffer_val, id_field):
         source_crs = source.crs
         # Set the output file
         mk_change_directory("Bldg_Outline_Polygons")
-        output_path = find_file("Bldg_Outline_Polygons", ".shp")
         with fiona.open('Building_Outline_Polygons.shp', 'w', driver='ESRI Shapefile',
                         crs=source_crs, schema=this_schema) as output:
             # Iterate over each line in line file
@@ -62,7 +61,7 @@ def add_buffer(buffer_val, id_field):
                                                  'Shape_Leng': line_buffer.length,
                                                  'Shape_Area': line_buffer.area,
                                                  'Max_Depth': 0}})
-
+            output_path = find_file("Bldg_Outline_Polygons", ".shp")
             if not os.stat(output_path).st_size == 0:
                 not_empty_file = False
     return not_empty_file

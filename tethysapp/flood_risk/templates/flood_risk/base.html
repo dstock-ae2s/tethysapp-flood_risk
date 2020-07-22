@@ -16,18 +16,20 @@
   {% url 'flood_risk:home' as home_url %}
   {% url 'flood_risk:layer_gen' as layer_gen_url %}
   {% url 'flood_risk:risk_analysis' as risk_analysis_url %}
+  {% url 'flood_risk:manhole' as manhole_url %}
 
   <li class="title">Navigation</li>
   <li class="{% if request.path == home_url %}active{% endif %}"><a href="{{ home_url }}">Zone File Generation</a></li>
   <li class = "{% if request.path == layer_gen_url %}active{% endif %}"><a href="{{ layer_gen_url }}">Building Risk</a></li>
   <li class = "{% if request.path == risk_analysis_url %}active{% endif %}"><a href="{{ risk_analysis_url }}">Street Risk</a></li>
+  <li class = "{% if request.path == manhole_url %}active{% endif %}"><a href="{{ manhole_url }}">Manhole Risk</a></li>
 
 {% endblock %}
 
 {% block app_content %}
 {% endblock %}
 
-{% block app_actions %}
+{% block app_actions_override %}
 {% endblock %}
 
 {% block content_dependent_styles %}

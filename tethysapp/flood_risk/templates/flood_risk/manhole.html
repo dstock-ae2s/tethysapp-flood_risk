@@ -14,24 +14,24 @@
   <li class = "{% if request.path == risk_analysis_url %}active{% endif %}"><a href="{{ risk_analysis_url }}">Street Risk</a></li>
   <li class = "{% if request.path == manhole_url %}active{% endif %}"><a href="{{ manhole_url }}">Manhole Risk</a></li>
 
-    <h1>Street Risk</h1>
+    <h1>Manhole Risk</h1>
     <form action="" method="post" enctype="multipart/form-data">
         {% csrf_token %}
         <div class="form-group street_upload">
-            <label class ="control-label" for="street-shp-upload-input">Street Shapefile</label>
+            <label class ="control-label" for="manhole-shp-upload-input">Manhole Shapefile</label>
             <br>
-            <input id ="street-shp-upload-input" class = "shp-upload-input" name="street-shp-upload-input" style="display:inline-block;" type="file" accept = ".shp, .shx, .prj, .dbf, .cpg, .sbn, .sbx, .xml" multiple>
+            <input id ="manhole-shp-upload-input" class = "shp-upload-input" name="manhole-shp-upload-input" style="display:inline-block;" type="file" accept = ".shp, .shx, .prj, .dbf, .cpg, .sbn, .sbx, .xml" multiple>
 
-            <div id="streetid-select" style="display:inline-block;">
-            <label for="street-field-select-0" style="padding-rigth:5px;">Street ID Field:</label>
-                <select id="street-field-select-0">
+            <div id="manholeid-select" style="display:inline-block;">
+            <label for="manhole-field-select-0" style="padding-rigth:5px;">Manhole ID Field:</label>
+                <select id="manhole-field-select-0">
                     <option value="">Select Field</option>
                 </select>
             </div>
         </div>
         {% gizmo distance_input %}
-        {% gizmo street_buffer %}
-        {% gizmo button submit_streets %}
+        {% gizmo manhole_buffer %}
+        {% gizmo button submit_manhole %}
     </form>
 
 {% endblock %}

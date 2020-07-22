@@ -2,7 +2,18 @@
 {% load tethys_gizmos %}
 {% load staticfiles %}
 
-{% block app_content %}
+{% block app_navigation_items %}
+  {% url 'flood_risk:home' as home_url %}
+  {% url 'flood_risk:layer_gen' as layer_gen_url %}
+  {% url 'flood_risk:risk_analysis' as risk_analysis_url %}
+  {% url 'flood_risk:manhole' as manhole_url %}
+
+  <li class="title">Navigation</li>
+  <li class="{% if request.path == home_url %}active{% endif %}"><a href="{{ home_url }}">Zone File Generation</a></li>
+  <li class = "{% if request.path == layer_gen_url %}active{% endif %}"><a href="{{ layer_gen_url }}">Building Risk</a></li>
+  <li class = "{% if request.path == risk_analysis_url %}active{% endif %}"><a href="{{ risk_analysis_url }}">Street Risk</a></li>
+  <li class = "{% if request.path == manhole_url %}active{% endif %}"><a href="{{ manhole_url }}">Manhole Risk</a></li>
+
     <h1>Building Risk</h1>
 
             <label class ="control-label" for="bldg-shp-upload-input">Building Shapefile</label>
@@ -57,6 +68,15 @@
         <br><br>
         {% gizmo button submit_buildings %}
 
+{% endblock %}
+
+{% block app_content %}
+    <form method="post">
+        {% csrf_token %}
+        {% gizmo select_input select_options %}
+        <input name="submit" type="submit" value="Update" class="btn btn-default">
+    </form>
+    {% gizmo map_view %}
 {% endblock %}
 
 {% block after_app_content %}

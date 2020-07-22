@@ -8,6 +8,7 @@ from .tax_parcel import *
 from .landuse import *
 from .streets import *
 from .utilities import *
+import geopandas as gpd
 
 def file_upload(request):
     return_obj = {}
@@ -79,6 +80,9 @@ def building_process(request):
                         # Add land use to building shapefile
                         f_path = find_file("landuse_file", ".shp")
                         land_join(buildingid_field, landuseid_field, landuse_field, f_path)
+                        output_path = find_file("Landuse_Inundation", ".shp")
+                        if not os.stat(output_path).st_size == 0:
+                            move_geoserver("Landuse_Inundation")
 
         return JsonResponse(return_obj)
 
@@ -105,7 +109,50 @@ def streets_process(request):
         output_file = "Streets_divided"
         output_file2 = "Streets_buffered"
 
-        add_buffer_generic(str(streetid), float(distance_val), buffer_val, file_name, output_file, output_file2)
+        # Split streets at set distance interval
+        divide_lines(str(streetid), float(distance_val), file_name, output_file)
+
+        # Edit file to include all fields
+        output_file_path = find_file(output_file, (output_file + ".shp"))
+
+        this_output = gpd.read_file(output_file_path)
+        this_output.fillna(0, inplace=True)
+
+        input_file_path = find_file(file_name, ".shp")
+        this_input = gpd.read_file(input_file_path)
+        this_input = this_input.drop(columns=['geometry'])
+        this_input.fillna(0, inplace=True)
+
+        streets_with_info = this_output.merge(this_input, on=streetid)
+
+        # Check if the dataframe is empty and if not export to shapefile
+        if not streets_with_info.empty:
+            mk_change_directory(output_file)
+            streets_with_info.to_file(filename=(output_file + ".shp"), overwrite=True)
+
+        buffer_lines(streetid, buffer_val, output_file, output_file2)
+        max_water_depth2(streetid, output_file, output_file2, output_file, 'Max_Depth')
+
+        return JsonResponse(return_obj)
+
+
+"""
+Ajax controller which imports manhole shapefiles to the user workspace
+"""
+
+
+def manhole_process(request):
+    return_obj = {}
+
+    if request.is_ajax() and request.method == 'POST':
+
+        manholeid = request.POST["manholeid_field"]
+
+        buffer_val = request.POST["buffer"]
+        if buffer_val == "":
+            buffer_val = 20
+
+        simple_buffer(manholeid, buffer_val, "manhole_file", "Manhole_buffered", 'Polygon', 'Point')
 
         return JsonResponse(return_obj)
 
