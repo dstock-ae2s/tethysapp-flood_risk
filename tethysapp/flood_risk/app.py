@@ -76,6 +76,11 @@ class FloodRisk(TethysAppBase):
                 url='flood-risk/risk-analysis/risks/file-upload',
                 controller='flood_risk.ajax_controllers.file_upload'
             ),
+            UrlMap(
+                name='file-upload',
+                url='flood-risk/manhole/file-upload',
+                controller='flood_risk.ajax_controllers.file_upload'
+            ),
         )
 
         return url_maps

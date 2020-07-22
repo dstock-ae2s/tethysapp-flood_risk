@@ -8,6 +8,10 @@ from pyproj.crs import CRS
 import json
 from .app import FloodRisk as app
 from collections import OrderedDict
+import rasterio
+import rasterstats as rs
+import geopandas as gpd
+import numpy as np
 
 """
 Function to make a directory if it does not exist and change directories
@@ -184,4 +188,81 @@ def output_shape(oneline, output, objectid, line, index):
                                  'Max_Depth': 0}})
     index += 1
     return index
+
+
+"""
+Function to populate the Max Depth field based on raster data
+"""
+def simple_max_water_depth(objectid, target_file, input_file, output_file, field, target_field):
+    # Set the working directory
+    mk_change_directory(input_file)
+    f_path = find_file(input_file, (input_file + ".shp"))
+
+    with fiona.open(f_path, 'r') as polygon_file:
+        mk_change_directory("depth_file")
+        rasters = find_file("depth_file", ".tif")
+
+        with rasterio.open(rasters) as raster_file:
+
+            transform = raster_file.transform
+            transform.to_gdal()
+            array = raster_file.read(1)
+            array[array==0] = np.nan
+
+            # Extract zonal stats
+            raster_stats = rs.zonal_stats(polygon_file,
+                                          array,
+                                          all_touched=True,
+                                          nodata=raster_file.nodata,
+                                          affine=transform,
+                                          geojson_out=True,
+                                          raster_out=True,
+                                          copy_properties=True,
+                                          stats='max')
+
+            # Add max depth to max depth field and export raster stats to a shapefile
+            raster_stats_dataframe = gpd.GeoDataFrame.from_features(raster_stats)
+
+            if not raster_stats_dataframe.empty:
+                raster_stats_dataframe[field] = raster_stats_dataframe['max']
+
+                raster_stats_dataframe = raster_stats_dataframe.drop(
+                    columns=['mini_raster_array', 'mini_raster_affine', 'mini_raster_nodata', 'max'])
+                if not objectid == target_field:
+                    raster_stats_dataframe = raster_stats_dataframe.drop(columns=[objectid])
+
+                simple_spatial_join(raster_stats_dataframe, target_file, output_file, field, target_field)
+                output_path = find_file(output_file, ".shp")
+                if not os.stat(output_path).st_size == 0:
+                    move_geoserver(output_file)
+
+
+
+"""
+Function called by max_depth which joins the Max_Depth field to the input streets shapefile
+"""
+def simple_spatial_join(raster_stats_dataframe, target_file, output_file, depth_field, target_field):
+    # Set the working directory
+    mk_change_directory(target_file)
+
+    # Read in the streets shapefile
+    target_path = find_file(target_file, ".shp")
+    target = gpd.read_file(target_path)
+    target.fillna(0, inplace=True)
+    if depth_field in target.columns:
+        target = target.drop(columns=[depth_field])
+
+    # Read in the zonal stats dataframe with max depth
+    depth_file = raster_stats_dataframe
+    depth_file.fillna(0, inplace=True)
+    selected_cols = [target_field, depth_field]
+    depth_file = depth_file[selected_cols]
+
+    # Merge streets dataframe with depth dataframe
+    streets_with_depth = target.merge(depth_file, on=target_field)
+
+    # Check if the dataframe is empty and if not export to shapefile
+    if not streets_with_depth.empty:
+        mk_change_directory(output_file)
+        streets_with_depth.to_file(filename=(output_file+".shp"))
 

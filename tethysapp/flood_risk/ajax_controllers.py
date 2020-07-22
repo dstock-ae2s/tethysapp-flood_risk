@@ -9,6 +9,7 @@ from .landuse import *
 from .streets import *
 from .utilities import *
 import geopandas as gpd
+from geopandas.tools import sjoin
 
 def file_upload(request):
     return_obj = {}
@@ -148,11 +149,63 @@ def manhole_process(request):
 
         manholeid = request.POST["manholeid_field"]
 
+        buffer_val = 0.5
+
+        simple_buffer(manholeid, buffer_val, "manhole_file", "Manhole_buffered", 'Polygon', 'Point')
+        simple_max_water_depth(manholeid, "manhole_file", "Manhole_buffered", "Manhole_Inundation", 'Max_Depth', manholeid)
+
         buffer_val = request.POST["buffer"]
         if buffer_val == "":
             buffer_val = 20
+        simple_buffer(manholeid, buffer_val, "manhole_file", "Manhole_radius", 'Polygon', 'Point')
 
-        simple_buffer(manholeid, buffer_val, "manhole_file", "Manhole_buffered", 'Polygon', 'Point')
+        mh_inun = find_file("Manhole_Inundation", ".shp")
+        mh_inun = gpd.GeoDataFrame.from_file(mh_inun)
+
+        f_path = find_file("Streets_Inundation", ".shp")
+        join_file = gpd.GeoDataFrame.from_file(f_path)
+        join_file = join_file.rename(columns={'Max_Depth': 'Street_Depth'})
+        if manholeid in join_file.columns:
+            join_file = join_file.drop(columns=[manholeid])
+
+        shapefile = find_file("Manhole_radius", ".shp")
+        target_file = gpd.GeoDataFrame.from_file(shapefile)
+        target_file = target_file.rename(columns={'Max_Depth': 'Blank_Field'})
+
+
+
+        # Spatially join street inundation and tax parcels
+        manholes_with_streets = sjoin(join_file, target_file, how='right', op='intersects')
+
+        # Group by objectid to take the max street depth for each manhole objectid
+        agg_manhole_street_depth = manholes_with_streets.groupby(str(manholeid)).agg(
+            Blank_Field=('Blank_Field', 'mean'),
+            Street_Depth=('Street_Depth', 'max'))
+
+        # Merge file with manhole file per objectid
+        mh_inun = mh_inun.merge(agg_manhole_street_depth, on=str(manholeid))
+        mh_inun = mh_inun.rename(columns={'Max_Depth': 'MH_Depth'})
+
+        for idx, row in target_file.iterrows():
+            if mh_inun.loc[idx, 'MH_Depth'] < 0 and mh_inun.loc[idx, 'Street_Depth'] == 0:
+                mh_inun.loc[idx, 'Blank_Field'] = "Not in ROW"
+            elif mh_inun.loc[idx, 'MH_Depth'] > 0:
+                mh_inun.loc[idx, 'Blank_Field'] = "Storm Sewer Controlled"
+            elif mh_inun.loc[idx, 'MH_Depth'] <= 0 and mh_inun.loc[idx, 'Street_Depth'] < 0.5:
+                mh_inun.loc[idx, 'Blank_Field'] = "OK"
+            elif mh_inun.loc[idx, 'MH_Depth'] <= 0 and mh_inun.loc[idx, 'Street_Depth'] >= 0.5:
+                mh_inun.loc[idx, 'Blank_Field'] = "Inlet Controlled"
+            else:
+                mh_inun.loc[idx, 'Blank_Field'] = "Not in ROW"
+
+        if not mh_inun.empty:
+            mk_change_directory("MH_Street_Inundation")
+            mh_inun.to_file("MH_Street_Inundation.shp")
+
+        output_path = find_file("MH_Street_Inundation", ".shp")
+        if not os.stat(output_path).st_size == 0:
+            move_geoserver("MH_Street_Inundation")
+
 
         return JsonResponse(return_obj)
 

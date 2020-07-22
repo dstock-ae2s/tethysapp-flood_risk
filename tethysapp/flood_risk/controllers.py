@@ -284,16 +284,10 @@ def manhole(request):
         style='success',
         attributes={'id': 'submit-manhole'},
     )
-    distance_input = TextInput(
-        display_text='Road Segment Length',
-        name='distance-input',
-        placeholder=100,
-        attributes={'id': 'distance-input'}
-    )
     manhole_buffer = TextInput(
         display_text='Manhole Buffer',
         name='manhole-buffer',
-        placeholder=0.5,
+        placeholder=20,
         attributes={'id': 'manhole-buffer'}
     )
     select_options = SelectInput(
@@ -345,7 +339,6 @@ def manhole(request):
         )
     )
     context = {
-        'distance_input':distance_input,
         'manhole_buffer':manhole_buffer,
         'submit_manhole':submit_manhole,
         'map_view':map_view,

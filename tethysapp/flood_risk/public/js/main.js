@@ -150,6 +150,7 @@ function file_upload_process_no_fields(file_upload_id, data){
 };
 
 function uploadFile(file_upload_id, file_name, filetype, number_fields){
+
     var shapefiles = $(file_upload_id)[0].files;
 
     //Preparing data to be submitted via AJAX POST request
@@ -246,7 +247,7 @@ process_manhole = function(data) {
     data.append("buffer", buffer);
 
     var manhole_risk = ajax_update_database_with_file("manhole-process-ajax",data); //Submitting the data through the ajax function, see main.js for the helper function.
-};
+}
 
 $("#submit-buildings").click(process_buildings);
 $("#submit-streets").click(process_streets);
