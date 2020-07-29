@@ -3,45 +3,84 @@
 {% load staticfiles %}
 
 {% block app_navigation_items %}
-  {% url 'flood_risk:home' as home_url %}
-  {% url 'flood_risk:layer_gen' as layer_gen_url %}
-  {% url 'flood_risk:risk_analysis' as risk_analysis_url %}
+  {% url 'flood_risk:building' as building_url %}
+  {% url 'flood_risk:street' as street_url %}
   {% url 'flood_risk:manhole' as manhole_url %}
+  {% url 'flood_risk:pipe' as pipe_url %}
 
   <li class="title">Navigation</li>
-  <li class="{% if request.path == home_url %}active{% endif %}"><a href="{{ home_url }}">Zone File Generation</a></li>
-  <li class = "{% if request.path == layer_gen_url %}active{% endif %}"><a href="{{ layer_gen_url }}">Building Risk</a></li>
-  <li class = "{% if request.path == risk_analysis_url %}active{% endif %}"><a href="{{ risk_analysis_url }}">Street Risk</a></li>
+  <li class = "{% if request.path == building_url %}active{% endif %}"><a href="{{ building_url }}">Building Risk</a></li>
+  <li class = "{% if request.path == street_url %}active{% endif %}"><a href="{{ street_url }}">Street Risk</a></li>
   <li class = "{% if request.path == manhole_url %}active{% endif %}"><a href="{{ manhole_url }}">Manhole Risk</a></li>
-
-    <h1>Manhole Risk</h1>
-    <form action="" method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        <div class="form-group street_upload">
-            <label class ="control-label" for="manhole-shp-upload-input">Manhole Shapefile</label>
-            <br>
-            <input id ="manhole-shp-upload-input" class = "shp-upload-input" name="manhole-shp-upload-input" style="display:inline-block;" type="file" accept = ".shp, .shx, .prj, .dbf, .cpg, .sbn, .sbx, .xml" multiple>
-
-            <div id="manholeid-select" style="display:inline-block;">
-            <label for="manhole-field-select-0" style="padding-rigth:5px;">Manhole ID Field:</label>
-                <select id="manhole-field-select-0">
-                    <option value="">Select Field</option>
-                </select>
-            </div>
-        </div>
-        {% gizmo manhole_buffer %}
-        {% gizmo button submit_manhole %}
-    </form>
+  <li class = "{% if request.path == pipe_url %}active{% endif %}"><a href="{{ pipe_url }}">Pipe Risk</a></li>
 
 {% endblock %}
 
 {% block app_content %}
-    <form method="post">
-        {% csrf_token %}
-        {% gizmo select_input select_options %}
-        <input name="submit" type="submit" value="Update" class="btn btn-default">
-    </form>
-    {% gizmo map_view %}
+    <div class="toolbar">
+        <div>
+            <a href="{{ manhole_url }}" type="button" class="btn btn-sm toolbtn-custom" id="curlink">Manhole Risk</a>
+        </div>
+    </div>
+
+    <div class="container-fluid main-container has-toolbar">
+        <div class="row full-height">
+            <!--LEFT-->
+            <div class="col-md-2 full-height">
+                <!--LEFT TOP-->
+                <div class="row top-row">
+                    <div class="panel " style="height:100%">
+                        <div class="panel-heading">
+                            <h4 class="panel-title">
+                                Manhole Risk
+                            </h4>
+                        </div>
+                        <div class="panel-body">
+                            <form action="" method="post" enctype="multipart/form-data">
+                                {% csrf_token %}
+                                <div class="form-group manhole_upload">
+                                    <label class ="control-label" for="manhole-shp-upload-input">Manhole Shapefile</label>
+                                    <br>
+                                    <input id ="manhole-shp-upload-input" class = "shp-upload-input" name="manhole-shp-upload-input" style="display:inline-block;" type="file" accept = ".shp, .shx, .prj, .dbf, .cpg, .sbn, .sbx, .xml" multiple>
+
+                                    <div id="manholeid-select" style="display:inline-block;">
+                                    <label for="manhole-field-select-0" style="padding-rigth:5px;">Manhole ID Field:</label>
+                                        <select id="manhole-field-select-0">
+                                            <option value="">Select Field</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                {% gizmo manhole_buffer %}
+                                {% gizmo button submit_manhole %}
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-10 full-height">
+                <div id="map-selection" class="row top-row" style="position:relative;">
+                    <div class="col-md-8 full colpad padtop pull-div">
+                        <div class="panel" style="height:100%;padding:10px;">
+                            <div id="mapDiv">
+                                <div class="card map-container" id="map-container" style="width:100%;height:100%;"></div>
+                                <div class="card map-container" id="top-map-container"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <section>
+        <form method="post">
+            {% csrf_token %}
+            {% gizmo select_input select_options %}
+            <input name="submit" type="submit" value="Update" class="btn btn-default">
+        </form>
+        {% gizmo map_view %}
+    </section>
 {% endblock %}
 
 {% block after_app_content %}

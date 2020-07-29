@@ -99,6 +99,11 @@
   min-width: 300px;
 }
 
+.form-container{
+    height:40%;
+    overflow:auto;
+}
+
 /* Style the input fields */
 input {
   padding: 10px;
@@ -113,9 +118,16 @@ input.invalid {
   background-color: #ffdddd;
 }
 
-/* Hide all steps by default: */
-.tab {
-  display: none;
+.panel{
+    height:40%;
+    padding-left: 1px;
+    padding-right: 1px;
+}
+
+.panel-heading{
+    height:50px;
+    font-weight:bold;
+    font-size:0.85em;
 }
 
 /* Make circles that indicate the steps of the form: */
@@ -178,3 +190,15 @@ input.invalid {
   opacity: 1;
   right: 0;
 }
+
+/* Hide all steps by default: */
+.tab {
+  display: none;
+}
+
+.top-section{
+    min-height:40%;
+    padding:0;
+}
+
+

@@ -249,9 +249,44 @@ process_manhole = function(data) {
     var manhole_risk = ajax_update_database_with_file("manhole-process-ajax",data); //Submitting the data through the ajax function, see main.js for the helper function.
 }
 
+process_pipe = function(data) {
+
+    var data = new FormData();
+
+    pipeid_field = document.getElementById("pipe-field-select-0").value;
+    data.append("pipeid_field", pipeid_field)
+
+    flow = document.getElementById("pipe-field-select-1").value;
+    data.append("flow", flow);
+
+    diameter = document.getElementById("pipe-field-select-2").value;
+    data.append("diameter", diameter);
+
+    slope = document.getElementById("pipe-field-select-3").value;
+    data.append("slope", slope);
+
+    streetid_field = document.getElementById("street2-field-select-0").value;
+    data.append("streetid_field", streetid_field);
+
+    street_flow = document.getElementById("street2-field-select-1").value;
+    data.append("street_flow", street_flow);
+
+    buffer = document.getElementById("street2-buffer").value;
+    data.append("buffer", buffer);
+
+    distance = document.getElementById("street2-distance").value;
+    data.append("distance", distance);
+
+    mannings_n = 0.013
+    data.append("mannings_n", mannings_n)
+
+    var pipe_risk = ajax_update_database_with_file("pipe-process-ajax",data); //Submitting the data through the ajax function, see main.js for the helper function.
+}
+
 $("#submit-buildings").click(process_buildings);
 $("#submit-streets").click(process_streets);
 $("#submit-manhole").click(process_manhole);
+$("#submit-pipe").click(process_pipe);
 
 $(function(){
 
@@ -277,6 +312,14 @@ $(function(){
 
     $('#manhole-shp-upload-input').change(function(){
         uploadFile('#manhole-shp-upload-input', 'manhole_file', ".shp", 1);
+    });
+
+    $('#pipe-shp-upload-input').change(function(){
+        uploadFile('#pipe-shp-upload-input', 'pipe_file', ".shp", 4);
+    });
+
+    $('#street2-shp-upload-input').change(function(){
+        uploadFile('#street2-shp-upload-input', 'street2_file', ".shp", 2);
     });
 
 });

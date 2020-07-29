@@ -27,19 +27,14 @@ class FloodRisk(TethysAppBase):
 
         url_maps = (
             UrlMap(
-                name='home',
-                url='flood-risk',
-                controller='flood_risk.controllers.home'
+                name='building',
+                url='building',
+                controller='flood_risk.controllers.building'
             ),
             UrlMap(
-                name='layer_gen',
-                url='layer-gen/layers',
-                controller='flood_risk.controllers.layer_gen'
-            ),
-            UrlMap(
-                name='risk_analysis',
-                url='risk-analysis/risks',
-                controller='flood_risk.controllers.risk_analysis'
+                name='street',
+                url='street',
+                controller='flood_risk.controllers.street'
             ),
             UrlMap(
                 name='manhole',
@@ -47,13 +42,18 @@ class FloodRisk(TethysAppBase):
                 controller='flood_risk.controllers.manhole'
             ),
             UrlMap(
+                name='pipe',
+                url='pipe',
+                controller='flood_risk.controllers.pipe'
+            ),
+            UrlMap(
                 name='building_process_ajax',
-                url='flood-risk/layer-gen/layers/building-process-ajax',
+                url='flood-risk/building/building-process-ajax',
                 controller='flood_risk.ajax_controllers.building_process'
             ),
             UrlMap(
                 name='streets_process_ajax',
-                url='flood-risk/risk-analysis/risks/streets-process-ajax',
+                url='flood-risk/street/streets-process-ajax',
                 controller='flood_risk.ajax_controllers.streets_process'
             ),
             UrlMap(
@@ -62,23 +62,33 @@ class FloodRisk(TethysAppBase):
                 controller='flood_risk.ajax_controllers.manhole_process'
             ),
             UrlMap(
+                name='pipe_process_ajax',
+                url='flood-risk/pipe/pipe-process-ajax',
+                controller='flood_risk.ajax_controllers.pipe_process'
+            ),
+            UrlMap(
                 name='file-upload',
-                url='flood-risk/layer-gen/layers/file-upload',
+                url='flood-risk/building/file-upload',
                 controller='flood_risk.ajax_controllers.file_upload'
             ),
             UrlMap(
                 name='file-upload-move-files',
-                url='flood-risk/layer-gen/layers/file-upload-move-files',
+                url='flood-risk/building/file-upload-move-files',
                 controller='flood_risk.ajax_controllers.file_upload_move_files'
             ),
             UrlMap(
                 name='file-upload',
-                url='flood-risk/risk-analysis/risks/file-upload',
+                url='flood-risk/street/file-upload',
                 controller='flood_risk.ajax_controllers.file_upload'
             ),
             UrlMap(
                 name='file-upload',
                 url='flood-risk/manhole/file-upload',
+                controller='flood_risk.ajax_controllers.file_upload'
+            ),
+            UrlMap(
+                name='file-upload',
+                url='flood-risk/pipe/file-upload',
                 controller='flood_risk.ajax_controllers.file_upload'
             ),
         )
