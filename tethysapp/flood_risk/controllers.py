@@ -10,6 +10,15 @@ from tethys_sdk.workspaces import user_workspace
 from .app import FloodRisk as app
 from .ajax_controllers import *
 
+
+@login_required()
+def home(request):
+
+    context = {}
+
+    return render(request, 'flood_risk/home.html', context)
+
+
 @login_required()
 def building(request):
     """
@@ -288,8 +297,8 @@ def pipe(request):
 
     # Define form gizmos
     buffer_input = TextInput(
-        display_text='Street Buffer',
-        name='street2-buffer',
+        display_text='Pipe Buffer',
+        name='pipe-buffer',
         placeholder=0,
         attributes={'id': 'street2-buffer'}
     )

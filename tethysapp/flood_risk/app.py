@@ -27,6 +27,11 @@ class FloodRisk(TethysAppBase):
 
         url_maps = (
             UrlMap(
+                name='home',
+                url='flood-risk',
+                controller='flood_risk.controllers.home'
+            ),
+            UrlMap(
                 name='building',
                 url='building',
                 controller='flood_risk.controllers.building'
@@ -90,6 +95,11 @@ class FloodRisk(TethysAppBase):
                 name='file-upload',
                 url='flood-risk/pipe/file-upload',
                 controller='flood_risk.ajax_controllers.file_upload'
+            ),
+            UrlMap(
+                name='file-upload-move-files',
+                url='flood-risk/pipe/file-upload-move-files',
+                controller='flood_risk.ajax_controllers.file_upload_move_files'
             ),
         )
 

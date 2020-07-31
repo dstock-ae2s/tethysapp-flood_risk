@@ -7,6 +7,8 @@ var taxid_field;
 var distance;
 var street_buffer;
 var streetid_field;
+var pipe_rad;
+var street_rad;
 
 
 function getCookie(name) {
@@ -194,7 +196,6 @@ function file_upload_process(data, field_list){
     });
 };
 
-
 process_buildings = function(){
     var data = new FormData();
 
@@ -256,14 +257,14 @@ process_pipe = function(data) {
     pipeid_field = document.getElementById("pipe-field-select-0").value;
     data.append("pipeid_field", pipeid_field)
 
-    flow = document.getElementById("pipe-field-select-1").value;
-    data.append("flow", flow);
+    slope = document.getElementById("pipe-field-select-1").value;
+    data.append("slope", slope);
 
     diameter = document.getElementById("pipe-field-select-2").value;
     data.append("diameter", diameter);
 
-    slope = document.getElementById("pipe-field-select-3").value;
-    data.append("slope", slope);
+    flow = document.getElementById("pipe-field-select-3").value;
+    data.append("flow", flow);
 
     streetid_field = document.getElementById("street2-field-select-0").value;
     data.append("streetid_field", streetid_field);
@@ -271,8 +272,11 @@ process_pipe = function(data) {
     street_flow = document.getElementById("street2-field-select-1").value;
     data.append("street_flow", street_flow);
 
-    buffer = document.getElementById("street2-buffer").value;
-    data.append("buffer", buffer);
+    street_buffer = document.getElementById("street2-buffer").value;
+    data.append("street_buffer", street_buffer);
+
+    pipe_buffer = document.getElementById("pipe-buffer").value;
+    data.append("pipe_buffer", pipe_buffer);
 
     distance = document.getElementById("street2-distance").value;
     data.append("distance", distance);
@@ -280,7 +284,27 @@ process_pipe = function(data) {
     mannings_n = 0.013
     data.append("mannings_n", mannings_n)
 
+    pipe_rad = document.forms[0].elements.pipe_radio.value;
+    data.append("pipe_rad", pipe_rad)
+
+    street_rad = document.forms[0].elements.street_radio.value;
+    data.append("street_rad", street_rad)
+
     var pipe_risk = ajax_update_database_with_file("pipe-process-ajax",data); //Submitting the data through the ajax function, see main.js for the helper function.
+}
+
+hide_field = function(id_field){
+    x = document.getElementById(id_field);
+    x.style.display = "none";
+    x = document.getElementById("label-" + id_field);
+    x.style.display = "none";
+}
+
+show_field = function(id_field, style){
+    x = document.getElementById(id_field);
+    x.style.display = style;
+    x = document.getElementById("label-" + id_field);
+    x.style.display = "inline";
 }
 
 $("#submit-buildings").click(process_buildings);
@@ -314,12 +338,44 @@ $(function(){
         uploadFile('#manhole-shp-upload-input', 'manhole_file', ".shp", 1);
     });
 
+    $('#depth2-shp-upload-input').change(function(){
+        uploadFileNoFields('#depth2-shp-upload-input', 'depth2_file');
+    });
+
     $('#pipe-shp-upload-input').change(function(){
         uploadFile('#pipe-shp-upload-input', 'pipe_file', ".shp", 4);
     });
 
     $('#street2-shp-upload-input').change(function(){
         uploadFile('#street2-shp-upload-input', 'street2_file', ".shp", 2);
+    });
+
+    if(document.forms[0].elements.street_radio.value == "yes"){
+        hide_field('street2-field-select-1')
+        show_field('depth2-shp-upload-input', "inline-block")
+        show_field('street2-buffer', "inline")
+    }
+    $(document.forms[0].elements.street_radio).change(function(){
+        if(document.forms[0].elements.street_radio.value == "yes"){
+        hide_field('street2-field-select-1')
+        show_field('depth2-shp-upload-input', "inline-block")
+        show_field('street2-buffer', "inline")
+        } else {
+        show_field('street2-field-select-1', "inline")
+        hide_field('depth2-shp-upload-input')
+        hide_field('street2-buffer')
+        };
+    });
+
+    if(document.forms[0].elements.pipe_radio.value == "no"){
+        hide_field('pipe-field-select-3')
+    }
+    $(document.forms[0].elements.pipe_radio).change(function(){
+        if(document.forms[0].elements.pipe_radio.value == "yes"){
+        show_field('pipe-field-select-3', "inline")
+        } else {
+        hide_field('pipe-field-select-3')
+        };
     });
 
 });

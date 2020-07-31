@@ -18,8 +18,25 @@
     <form action="" method="post" enctype="multipart/form-data">
         {% csrf_token %}
         <div class="form-group pipe_upload">
+            <text>Is a flowrate associated with pipe shapefile?</text>
+            <label class="container">
+                <input type="radio" name="pipe_radio" checked="checked" value="yes">Yes
+                <span class="checkmark"></span>
+            </label>
+            <label class="container">
+                <input type="radio" name="pipe_radio" value="no">No
+                <span class="checkmark"></span>
+            </label>
+            <text>Extract street flowrate from raster?</text>
+            <label class="container">
+                <input type="radio" name="street_radio" checked="checked" value="yes">Yes
+                <span class="checkmark"></span>
+            </label>
+            <label class="container">
+                <input type="radio" name="street_radio" value="no">No
+                <span class="checkmark"></span>
+            </label>
             <label class ="control-label" for="pipe-shp-upload-input">Pipe Shapefile</label>
-            <br>
             <input id ="pipe-shp-upload-input" class = "shp-upload-input" name="pipe-shp-upload-input" style="display:inline-block;" type="file" accept = ".shp, .shx, .prj, .dbf, .cpg, .sbn, .sbx, .xml" multiple>
 
             <div id="pipeid-select" style="display:inline-block;">
@@ -28,7 +45,7 @@
                     <option value="">Select Field</option>
                 </select>
             <br>
-            <label for="pipe-field-select-1" style="padding-rigth:5px;">Pipe Flow Field:</label>
+            <label for="pipe-field-select-1" id ="label-pipe-field-select-1" style="padding-rigth:5px;">Pipe Slope Field:</label>
                 <select id="pipe-field-select-1">
                     <option value="">Select Field</option>
                 </select>
@@ -38,31 +55,36 @@
                     <option value="">Select Field</option>
                 </select>
             <br>
-                <label for="pipe-field-select-3" style="padding-rigth:5px;">Pipe Slope Field:</label>
+                <label for="pipe-field-select-3" id = "label-pipe-field-select-3" style="padding-rigth:5px;">Pipe Flow Field:</label>
                 <select id="pipe-field-select-3">
                     <option value="">Select Field</option>
                 </select>
             </div>
         </div>
+        {% gizmo buffer_input %}
         <div class="form-group street2_upload">
-            <label class ="control-label" for="street2-shp-upload-input">Street Shapefile</label>
+            <label class ="control-label" id ="label-depth2-shp-upload-input" for="depth2-shp-upload-input">Inundation Raster</label>
+            <br>
+            <input id ="depth2-shp-upload-input" class="shp-upload-input" name="depth2-shp-upload-input" style="display:inline-block;" type="file" accept = ".tif, .tfw, .xml, .ovr" multiple>
+            <label class ="control-label" id ="label-street2-buffer" for="street2-buffer">Street Buffer</label>
+            <input type="text" id="street2-buffer" name="street2_buffer" placeholder="20.0" required>
+            <label class ="control-label" id ="label-street2-shp-upload-input" for="street2-shp-upload-input">Street Shapefile</label>
             <br>
             <input id ="street2-shp-upload-input" class = "shp-upload-input" name="street2-shp-upload-input" style="display:inline-block;" type="file" accept = ".shp, .shx, .prj, .dbf, .cpg, .sbn, .sbx, .xml" multiple>
 
-            <div id="street2id-select" style="display:inline-block;">
+            <div id="street2id-select" style="display:inline-block;" name="street2id_select">
             <label for="street2-field-select-0" style="padding-rigth:5px;">Street ID Field:</label>
                 <select id="street2-field-select-0">
                     <option value="">Select Field</option>
                 </select>
             <br>
-            <label for="street2-field-select-1" style="padding-rigth:5px;">Street Flow Field:</label>
-                <select id="street2-field-select-1">
+            <label for="street2-field-select-1" id = "label-street2-field-select-1" style="padding-rigth:5px;">Street Flow Field:</label>
+                <select id="street2-field-select-1" name="street2_field_select_1">
                     <option value="">Select Field</option>
                 </select>
             </div>
         </div>
         {% gizmo distance_input %}
-        {% gizmo buffer_input %}
         {% gizmo button submit_pipe %}
     </form>
 

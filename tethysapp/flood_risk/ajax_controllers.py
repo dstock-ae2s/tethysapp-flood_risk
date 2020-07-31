@@ -205,6 +205,9 @@ def streets_process(request):
                     mk_change_directory("Streets_Inundation")
                     streets_with_depth.to_file(filename=("Streets_Inundation.shp"))
 
+                    if not os.stat(find_file("Streets_Inundation", ".shp")).st_size == 0:
+                        move_geoserver("Streets_Inundation")
+
         return JsonResponse(return_obj)
 
 
@@ -225,8 +228,6 @@ def manhole_process(request):
         max_int_results = max_intersect("Manhole_buffered", "depth_file")
         if not max_int_results['is_dataframe_empty']:
             raster_stats_dataframe = max_int_results['return_dataframe']
-            print("RASTER STATS")
-            print(raster_stats_dataframe.dtypes)
             raster_stats_dataframe['Max_Depth']=raster_stats_dataframe['max']
             raster_stats_dataframe = raster_stats_dataframe.drop(columns=['max', 'geometry'])
             target_file = gpd.read_file(find_file("manhole_file", ".shp"))
@@ -238,7 +239,6 @@ def manhole_process(request):
             if not manholes_with_depth.empty:
                 mk_change_directory("Manhole_Inundation")
                 manholes_with_depth.to_file(filename="Manhole_Inundation.shp")
-        #simple_max_water_depth(manholeid, "manhole_file", "Manhole_buffered", "Manhole_Inundation", 'Max_Depth', manholeid)
 
                 if not os.stat(find_file("Manhole_Inundation", ".shp")).st_size == 0:
                     buffer_val = request.POST["buffer"]
@@ -285,8 +285,7 @@ def manhole_process(request):
                         mk_change_directory("MH_Street_Inundation")
                         mh_inun.to_file("MH_Street_Inundation.shp")
 
-                    output_path = find_file("MH_Street_Inundation", ".shp")
-                    if not os.stat(output_path).st_size == 0:
+                    if not os.stat(find_file("MH_Street_Inundation", ".shp")).st_size == 0:
                         move_geoserver("MH_Street_Inundation")
 
         return JsonResponse(return_obj)
@@ -307,13 +306,14 @@ def pipe_process(request):
         diameter = request.POST["diameter"]
         slope = request.POST["slope"]
         streetid = request.POST["streetid_field"]
-        street_flow = request.POST["street_flow"]
-        buffer = float(request.POST["buffer"])
+        buffer = float(request.POST["pipe_buffer"])
         distance = float(request.POST["distance"])
         mannings_n = float(request.POST["mannings_n"])
+        pipe_rad = request.POST["pipe_rad"]
 
         street_file = "street2_file"
         split_street_file = "Streets2_divided"
+        street_buffered_file = "Streets2_buffered"
         pipe_file = "pipe_file"
         pipe_buffered_file = "Pipes_buffered"
 
@@ -334,52 +334,82 @@ def pipe_process(request):
         if not streets_with_info.empty:
             mk_change_directory(split_street_file)
             streets_with_info.to_file(filename=(split_street_file + ".shp"), overwrite=True)
+            street_rad = request.POST["street_rad"]
 
-            add_buffer(pipeid, buffer, pipe_file, pipe_buffered_file, 'Polygon', 'LineString')
+            if street_rad == "no":
+                street_flow = request.POST["street_flow"]
+            else:
+                street_flow = 's_flow'
+                street_buffer = request.POST["street_buffer"]
+                add_buffer(streetid, street_buffer, split_street_file, street_buffered_file, 'Polygon', 'LineString')
+                output_intersect = max_intersect(street_buffered_file, "depth2_file")
+                if not output_intersect["is_dataframe_empty"]:
+                    raster_stats_dataframe = output_intersect["return_dataframe"]
+                    raster_stats_dataframe[street_flow] = raster_stats_dataframe['max']
+                    raster_stats_dataframe = raster_stats_dataframe.drop(columns=['max', 'geometry', 'Shape_Leng', 'Shape_Area'])
+                    target_file = gpd.read_file(find_file(split_street_file, ".shp"))
+                    target_file.fillna(0, inplace=True)
+                    if street_flow in target_file.columns:
+                        target_file = target_file.drop(columns=[street_flow, 'Shape_Leng', 'Shape_Area'])
 
-            # Spatially join buffered street flow and pipe flow
-            f_path = find_file(street_file, ".shp")
-            left_file = gpd.GeoDataFrame.from_file(f_path)
-            left_file = left_file.rename(columns={streetid: 'STREETID'})
+                    street_with_flow = target_file.merge(raster_stats_dataframe, on=streetid)
+                    split_street_file = "Street_Flow"
+                    if not street_with_flow.empty:
+                        mk_change_directory(split_street_file)
+                        street_with_flow.to_file(filename=split_street_file+".shp")
 
-            f_path = find_file(pipe_buffered_file, ".shp")
-            buffer_file = gpd.GeoDataFrame.from_file(f_path)
+            if not os.stat(find_file(split_street_file, ".shp")).st_size == 0:
+                add_buffer(pipeid, buffer, pipe_file, pipe_buffered_file, 'Polygon', 'LineString')
 
-            # Edit file to include all fields
-            this_input = gpd.read_file(find_file(pipe_file, ".shp"))
-            this_input = this_input.drop(columns=['geometry'])
-            this_input.fillna(0, inplace=True)
+                # Spatially join street flow and buffered pipe flow
+                f_path = find_file(split_street_file, ".shp")
+                left_file = gpd.GeoDataFrame.from_file(f_path)
+                left_file = left_file.rename(columns={streetid: 'STREETID'})
 
-            right_file = buffer_file.merge(this_input, on=pipeid)
-            right_file = right_file.rename(columns={pipeid: 'PIPEID'})
+                f_path = find_file(pipe_buffered_file, ".shp")
+                buffer_file = gpd.GeoDataFrame.from_file(f_path)
+                buffer_file = buffer_file.drop(columns=['geometry'])
 
-            streets_and_pipes = sjoin(left_file, right_file, how='right', op='intersects')
-            streets_and_pipes.fillna(0, inplace=True)
-            streets_and_pipes = streets_and_pipes.drop(columns=['index_left'])
+                # Edit file to include all fields
+                this_input = gpd.read_file(find_file(pipe_file, ".shp"))
+                this_input.fillna(0, inplace=True)
 
-            agg_streets_and_pipes = streets_and_pipes.dissolve(by='PIPEID', aggfunc='max')
+                right_file = this_input.merge(buffer_file, on=pipeid)
+                right_file = right_file.rename(columns={pipeid: 'PIPEID'})
 
-            for i, j in agg_streets_and_pipes.iterrows():
-                this_diameter = float(agg_streets_and_pipes.loc[i, diameter])
-                this_slope = float(agg_streets_and_pipes.loc[i, slope])
-                agg_streets_and_pipes.loc[i, 'Design_Q'] = (1.486 / mannings_n) * math.pi * math.pow(this_diameter, 2) * 0.25 * math.pow(
-                    this_diameter * 0.25, 2 / 3) * math.pow(this_slope, 0.5)
+                streets_and_pipes = sjoin(left_file, right_file, how='right', op='intersects')
+                streets_and_pipes.fillna(0, inplace=True)
+                streets_and_pipes = streets_and_pipes.drop(columns=['index_left'])
 
-            agg_streets_and_pipes['Q_req'] = (agg_streets_and_pipes[flow] + agg_streets_and_pipes[street_flow]) - agg_streets_and_pipes['Design_Q']
+                agg_streets_and_pipes = streets_and_pipes.dissolve(by='PIPEID', aggfunc='max')
 
-            for i, j in agg_streets_and_pipes.iterrows():
-                if agg_streets_and_pipes.loc[i, 'Q_req'] < 0:
-                    agg_streets_and_pipes.loc[i, 'New_Dia'] = ''
-                else:
-                    this_slope = agg_streets_and_pipes.loc[i, slope]
-                    q_req = agg_streets_and_pipes.loc[i, 'Q_req'] + agg_streets_and_pipes.loc[i, 'Design_Q']
-                    agg_streets_and_pipes.loc[i, 'New_Dia'] = (math.pow(
-                        q_req * (mannings_n / 1.486) * (math.pow(4, 5 / 3) / math.pi) * (
-                                    1 / math.pow(this_slope, 1 / 2)), 3 / 8))
+                for i, j in agg_streets_and_pipes.iterrows():
+                    this_diameter = float(agg_streets_and_pipes.loc[i, diameter])
+                    this_slope = float(agg_streets_and_pipes.loc[i, slope])
+                    agg_streets_and_pipes.loc[i, 'Design_Q'] = (1.486 / mannings_n) * math.pi * math.pow(this_diameter, 2) * 0.25 * math.pow(
+                        this_diameter * 0.25, 2 / 3) * math.pow(this_slope, 0.5)
 
-            # Check if the dataframe is empty and if not export to shapefile
-            if not agg_streets_and_pipes.empty:
-                mk_change_directory("Pipe_Inundation")
-                agg_streets_and_pipes.to_file(filename=("Pipe_Inundation.shp"), overwrite=True)
+                if street_flow in agg_streets_and_pipes.columns:
+                    if pipe_rad == "yes":
+                        agg_streets_and_pipes['Q_req'] = (agg_streets_and_pipes[flow] + agg_streets_and_pipes[street_flow]) - agg_streets_and_pipes['Design_Q']
+                    else:
+                        agg_streets_and_pipes['Q_req'] = (agg_streets_and_pipes[street_flow]) - agg_streets_and_pipes['Design_Q']
+
+                    for i, j in agg_streets_and_pipes.iterrows():
+                        if agg_streets_and_pipes.loc[i, 'Q_req'] < 0:
+                            agg_streets_and_pipes.loc[i, 'New_Dia'] = ''
+                        else:
+                            this_slope = agg_streets_and_pipes.loc[i, slope]
+                            q_req = agg_streets_and_pipes.loc[i, 'Q_req'] + agg_streets_and_pipes.loc[i, 'Design_Q']
+                            agg_streets_and_pipes.loc[i, 'New_Dia'] = (math.pow(
+                                q_req * (mannings_n / 1.486) * (math.pow(4, 5 / 3) / math.pi) * (
+                                            1 / math.pow(this_slope, 1 / 2)), 3 / 8))
+    
+                    # Check if the dataframe is empty and if not export to shapefile
+                    if not agg_streets_and_pipes.empty:
+                        mk_change_directory("Pipe_Inundation")
+                        agg_streets_and_pipes.to_file(filename=("Pipe_Inundation.shp"), overwrite=True)
+                        if not os.stat(find_file("Pipe_Inundation", ".shp")).st_size == 0:
+                            move_geoserver("Pipe_Inundation")
 
         return JsonResponse(return_obj)
