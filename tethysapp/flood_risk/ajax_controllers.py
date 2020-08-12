@@ -4,6 +4,8 @@ from .utilities import *
 import geopandas as gpd
 from geopandas.tools import sjoin
 import math
+from pyproj import Proj, transform
+from tethys_sdk.gizmos import MVLayer
 
 def file_upload(request):
     return_obj = {}
@@ -115,9 +117,6 @@ def building_process(request):
                                 if not os.stat(find_file("Parcel_Inundation", ".shp")).st_size == 0:
                                     is_tax_empty = False
 
-                            #f_path = find_file("tax_file", ".shp")
-                            #is_tax_empty = tax_join(buildingid_field, taxid_field, tax_field, f_path)
-
                             if not is_tax_empty:
                                 # Add land use to building shapefile
                                 join_file = gpd.GeoDataFrame.from_file(find_file("landuse_file", ".shp"))
@@ -137,6 +136,7 @@ def building_process(request):
                                     else:
                                         target_file.loc[idx, 'Residential'] = 0
                                 target_file=target_file.rename(columns={'Land_Use':landuse_field})
+                                return_obj["bounds"] = target_file.total_bounds
                                 if not target_file.empty:
                                     mk_change_directory("Landuse_Inundation")
                                     target_file.to_file("Landuse_Inundation.shp")
@@ -282,11 +282,42 @@ def manhole_process(request):
                             mh_inun.loc[idx, 'Control'] = "Not in ROW"
 
                     if not mh_inun.empty:
+                        inProj = Proj(init=mh_inun.crs)
+                        outProj = Proj(init='epsg:4326')
+                        this_extent = (mh_inun.total_bounds).tolist()
+                        x1, y1 = this_extent[0], this_extent[1]
+                        x1, y1 = transform(inProj, outProj, x1, y1)
+                        x2, y2 = this_extent[2], this_extent[3]
+                        x2, y2 = transform(inProj, outProj, x2, y2)
+                        this_extent = [x1, y1, x2, y2]
+
+                        this_centroid = centroid(this_extent)
+
+                        return_obj["centroid"] = this_centroid
+                        return_obj["extent"] = this_extent
                         mk_change_directory("MH_Street_Inundation")
                         mh_inun.to_file("MH_Street_Inundation.shp")
 
                     if not os.stat(find_file("MH_Street_Inundation", ".shp")).st_size == 0:
                         move_geoserver("MH_Street_Inundation")
+
+                        map_layers = []
+                        geoserver_engine = app.get_spatial_dataset_service(name='main_geoserver', as_engine=True)
+                        response = geoserver_engine.list_layers(with_properties=False)
+                        if response['success']:
+                            for layer in response['result']:
+                                if layer == 'flood-risk:MH_Street_Inundation':
+                                    geoserver_layer = MVLayer(
+                                        source='ImageWMS',
+                                        options={
+                                            'url': 'http://localhost:8080/geoserver/wms',
+                                            'params': {'LAYERS': 'flood-risk:MH_Street_Inundation'},
+                                            'serverType': 'geoserver'
+                                        },
+                                        legend_title=""
+                                    )
+                                    map_layers.append(geoserver_layer)
+                                    return_obj["layer"] = map_layers
 
         return JsonResponse(return_obj)
 
@@ -395,15 +426,30 @@ def pipe_process(request):
                     else:
                         agg_streets_and_pipes['Q_req'] = (agg_streets_and_pipes[street_flow]) - agg_streets_and_pipes['Design_Q']
 
+                    diameter_options = [0.010417, 0.020833, 0.03125, 0.041667, 0.0625, 0.083333, 0.104167, 0.125,
+                                        0.166667, 0.208333, 0.25, 0.291667, 0.333333, 0.375, 0.416667, 0.5, 0.583333,
+                                        0.666667, 0.75, 0.833333, 0.916667, 1, 1.166667, 1.333333, 1.5, 1.66667,
+                                        1.833333, 2, 2.166667, 2.333333, 2.5, 2.666667, 2.833333, 3, 3.166667, 3.333333,
+                                        3.5, 4, 4.5, 5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9, 10, 12]
+
                     for i, j in agg_streets_and_pipes.iterrows():
                         if agg_streets_and_pipes.loc[i, 'Q_req'] < 0:
-                            agg_streets_and_pipes.loc[i, 'New_Dia'] = ''
+                            agg_streets_and_pipes.loc[i, 'Dia_req'] = ''
+                            agg_streets_and_pipes.loc[i, 'Dia_sugg'] = agg_streets_and_pipes.loc[i, diameter]
                         else:
                             this_slope = agg_streets_and_pipes.loc[i, slope]
                             q_req = agg_streets_and_pipes.loc[i, 'Q_req'] + agg_streets_and_pipes.loc[i, 'Design_Q']
-                            agg_streets_and_pipes.loc[i, 'New_Dia'] = (math.pow(
+                            agg_streets_and_pipes.loc[i, 'Dia_req'] = (math.pow(
                                 q_req * (mannings_n / 1.486) * (math.pow(4, 5 / 3) / math.pi) * (
                                             1 / math.pow(this_slope, 1 / 2)), 3 / 8))
+                            if agg_streets_and_pipes.loc[i, 'Dia_req'] > 12:
+                                new_diameter = agg_streets_and_pipes.loc[i, 'Dia_req']
+                            else:
+                                absolute_difference_function = lambda list_value: abs(list_value-agg_streets_and_pipes.loc[i, 'Dia_req'])
+                                new_diameter = min(diameter_options, key=absolute_difference_function)
+                                if new_diameter < agg_streets_and_pipes.loc[i, 'Dia_req']:
+                                    new_diameter = diameter_options[(diameter_options.index(new_diameter)+1)]
+                            agg_streets_and_pipes.loc[i, 'Dia_sugg'] = new_diameter
     
                     # Check if the dataframe is empty and if not export to shapefile
                     if not agg_streets_and_pipes.empty:

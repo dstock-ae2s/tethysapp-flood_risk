@@ -13,6 +13,13 @@ import rasterstats as rs
 import geopandas as gpd
 import numpy as np
 from geopandas.tools import sjoin
+import geojson
+from tethys_sdk.gizmos import MapView, MVLayer, MVView
+
+def centroid(coordinates):
+    x = (coordinates[0]+coordinates[2])/2
+    y = (coordinates[1]+coordinates[3])/2
+    return [x, y]
 
 """
 Function to make a directory if it does not exist and change directories

@@ -9,6 +9,8 @@ from tethys_sdk.gizmos import *
 from tethys_sdk.workspaces import user_workspace
 from .app import FloodRisk as app
 from .ajax_controllers import *
+from .utilities import *
+import geojson
 
 
 @login_required()
@@ -25,12 +27,13 @@ def building(request):
     Controller for the Flood Risk Layer Generation Page
     """
 
+    form_submitted = False
     geoserver_engine = app.get_spatial_dataset_service(name='main_geoserver', as_engine=True)
-    options = []
     response = geoserver_engine.list_layers(with_properties=False)
-    if(response['success']):
+    if response['success']:
         for layer in response['result']:
-            options.append((layer.title(), layer))
+            if layer == 'flood-risk:Streets_Inundation':
+                form_submitted = True
 
 
     # Define form gizmos
@@ -42,28 +45,14 @@ def building(request):
         style='success',
         attributes={'id': 'submit-buildings'},
     )
-    buffer_input = TextInput(
-        display_text='Buffer',
-        name='buffer-input',
-        placeholder=0,
-        attributes={'id':'buffer-input'}
-    )
-    select_options = SelectInput(
-        display_text='Choose Layer',
-        name='layer',
-        multiple=False,
-        options=options,
-        attributes={'id': 'geoserver-layers'}
-    )
-    map_layers = []
-    if request.POST and 'layer' in request.POST:
-        selected_layer=request.POST['layer']
 
+    map_layers = []
+    if form_submitted:
         geoserver_layer = MVLayer(
             source='ImageWMS',
             options={
                 'url': 'http://localhost:8080/geoserver/wms',
-                'params': {'LAYERS':selected_layer},
+                'params': {'LAYERS': 'flood-risk:Landuse_Inundation'},
                 'serverType': 'geoserver'
             },
             legend_title=""
@@ -76,9 +65,9 @@ def building(request):
         layers=map_layers,
         controls=[
             'ZoomSlider', 'Rotate', 'FullScreen',
-            {'ZoomToExtent':{
-                'projection':'EPSG:4326',
-                'extent':[29.25, -4.75, 46.25, 5.2]
+            {'ZoomToExtent': {
+                'projection': 'EPSG:4326',
+                'extent': [29.25, -4.75, 46.25, 5.2]
             }}
         ],
         basemap=[
@@ -96,12 +85,9 @@ def building(request):
             minZoom=2
         )
     )
-
     context = {
-        'buffer_input': buffer_input,
         'submit_buildings': submit_buildings,
         'map_view': map_view,
-        'select_options': select_options,
     }
 
     return render(request, 'flood_risk/building.html', context)
@@ -112,12 +98,13 @@ def street(request):
     Controller for the Street Risk Analysis Page
     """
 
+    form_submitted = False
     geoserver_engine = app.get_spatial_dataset_service(name='main_geoserver', as_engine=True)
-    options = []
     response = geoserver_engine.list_layers(with_properties=False)
-    if(response['success']):
+    if response['success']:
         for layer in response['result']:
-            options.append((layer.title(), layer))
+            if layer == 'flood-risk:Streets_Inundation':
+                form_submitted = True
 
     # Define form gizmos
     submit_streets = Button(
@@ -139,22 +126,14 @@ def street(request):
         placeholder=0.5,
         attributes={'id': 'street-buffer'}
     )
-    select_options = SelectInput(
-        display_text='Choose Layer',
-        name='layer',
-        multiple=False,
-        options=options,
-        attributes={'id': 'geoserver-layers'}
-    )
-    map_layers = []
-    if request.POST and 'layer' in request.POST:
-        selected_layer=request.POST['layer']
 
+    map_layers = []
+    if form_submitted:
         geoserver_layer = MVLayer(
             source='ImageWMS',
             options={
                 'url': 'http://localhost:8080/geoserver/wms',
-                'params': {'LAYERS':selected_layer},
+                'params': {'LAYERS': 'flood-risk:Streets_Inundation'},
                 'serverType': 'geoserver'
             },
             legend_title=""
@@ -167,9 +146,9 @@ def street(request):
         layers=map_layers,
         controls=[
             'ZoomSlider', 'Rotate', 'FullScreen',
-            {'ZoomToExtent':{
-                'projection':'EPSG:4326',
-                'extent':[29.25, -4.75, 46.25, 5.2]
+            {'ZoomToExtent': {
+                'projection': 'EPSG:4326',
+                'extent': [29.25, -4.75, 46.25, 5.2]
             }}
         ],
         basemap=[
@@ -192,7 +171,6 @@ def street(request):
         'street_buffer':street_buffer,
         'submit_streets':submit_streets,
         'map_view':map_view,
-        'select_options':select_options,
     }
 
     return render(request, 'flood_risk/street.html', context)
@@ -204,12 +182,14 @@ def manhole(request):
     Controller for the Manhole page.
     """
 
+    form_submitted = False
     geoserver_engine = app.get_spatial_dataset_service(name='main_geoserver', as_engine=True)
-    options = []
     response = geoserver_engine.list_layers(with_properties=False)
-    if(response['success']):
+    if response['success']:
         for layer in response['result']:
-            options.append((layer.title(), layer))
+            if layer == 'flood-risk:MH_Street_Inundation':
+                form_submitted = True
+
 
     # Define form gizmos
     submit_manhole = Button(
@@ -220,32 +200,26 @@ def manhole(request):
         attributes={'id': 'submit-manhole'},
     )
     manhole_buffer = TextInput(
-        display_text='Manhole Buffer',
+        display_text='',
         name='manhole-buffer',
-        placeholder=20,
-        attributes={'id': 'manhole-buffer'}
-    )
-    select_options = SelectInput(
-        display_text='Choose Layer',
-        name='layer',
-        multiple=False,
-        options=options,
-        attributes={'id': 'geoserver-layers'}
+        placeholder=50,
+        attributes={'id': 'manhole-buffer'},
+        classes="input buffer-input",
     )
     map_layers = []
-    if request.POST and 'layer' in request.POST:
-        selected_layer=request.POST['layer']
+    if form_submitted:
 
         geoserver_layer = MVLayer(
             source='ImageWMS',
             options={
                 'url': 'http://localhost:8080/geoserver/wms',
-                'params': {'LAYERS':selected_layer},
+                'params': {'LAYERS':'flood-risk:MH_Street_Inundation'},
                 'serverType': 'geoserver'
             },
             legend_title=""
         )
         map_layers.append(geoserver_layer)
+
 
     map_view = MapView(
         height='100%',
@@ -277,10 +251,8 @@ def manhole(request):
         'manhole_buffer':manhole_buffer,
         'submit_manhole':submit_manhole,
         'map_view':map_view,
-        'select_options':select_options,
     }
     return render(request, 'flood_risk/manhole.html', context)
-
 
 @login_required()
 def pipe(request):
@@ -288,27 +260,15 @@ def pipe(request):
     Controller for the Manhole page.
     """
 
+    form_submitted = False
     geoserver_engine = app.get_spatial_dataset_service(name='main_geoserver', as_engine=True)
-    options = []
     response = geoserver_engine.list_layers(with_properties=False)
-    if(response['success']):
+    if response['success']:
         for layer in response['result']:
-            options.append((layer.title(), layer))
+            if layer == 'flood-risk:Pipe_Inundation':
+                form_submitted = True
 
     # Define form gizmos
-    buffer_input = TextInput(
-        display_text='Pipe Buffer',
-        name='pipe-buffer',
-        placeholder=0,
-        attributes={'id': 'street2-buffer'}
-    )
-
-    distance_input = TextInput(
-        display_text='Road Segment Length',
-        name='street2-distance',
-        placeholder=100,
-        attributes={'id': 'street2-distance'}
-    )
     submit_pipe = Button(
         display_text='Submit',
         name='submit-pipe',
@@ -316,27 +276,21 @@ def pipe(request):
         style='success',
         attributes={'id': 'submit-pipe'},
     )
-    select_options = SelectInput(
-        display_text='Choose Layer',
-        name='layer',
-        multiple=False,
-        options=options,
-        attributes={'id': 'geoserver-layers'}
-    )
+
     map_layers = []
-    if request.POST and 'layer' in request.POST:
-        selected_layer=request.POST['layer']
+    if form_submitted:
 
         geoserver_layer = MVLayer(
             source='ImageWMS',
             options={
                 'url': 'http://localhost:8080/geoserver/wms',
-                'params': {'LAYERS':selected_layer},
+                'params': {'LAYERS':'flood-risk:Pipe_Inundation'},
                 'serverType': 'geoserver'
             },
             legend_title=""
         )
         map_layers.append(geoserver_layer)
+
 
     map_view = MapView(
         height='100%',
@@ -365,10 +319,7 @@ def pipe(request):
         )
     )
     context = {
-        'buffer_input':buffer_input,
-        'distance_input':distance_input,
         'submit_pipe':submit_pipe,
         'map_view':map_view,
-        'select_options':select_options,
     }
     return render(request, 'flood_risk/pipe.html', context)
