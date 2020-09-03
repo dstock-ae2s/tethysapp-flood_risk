@@ -7,6 +7,15 @@
     padding-bottom: 0;
 }
 
+.info-btn {
+    background-color: none;
+    border: none;
+    color: blue;
+    padding: 0px 0px;
+    font-size: 10px;
+    cursor: pointer;
+}
+
 /* Create a custom checkbox */
 .checkmark {
   position: absolute;
@@ -114,6 +123,20 @@
   background: white;
 }
 
+.current {
+    background-color: #777;
+    color: white;
+    float: left;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    padding: 13px 20px;
+    font-size: 17px;
+    width: 25%;
+    text-align: center;
+}
+
+
 .form-container{
     height:40%;
     overflow:auto;
@@ -122,6 +145,7 @@
 .header {
     padding: 0px;
 }
+
 
 /* Style the input fields */
 .input {
@@ -293,15 +317,16 @@ input.invalid {
     border: none;
     outline: none;
     cursor: pointer;
-    padding: 12.5px 20px;
+    padding: 13px 20px;
     font-size: 17px;
     width: 25%;
     text-align: center;
 }
 
-active, .tablink:hover {
+.tablink:hover {
     background-color: #777;
 }
+
 
 .top-section{
     min-height:40%;

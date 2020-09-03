@@ -7,12 +7,12 @@
     {% url 'flood_risk:street' as street_url %}
     {% url 'flood_risk:manhole' as manhole_url %}
     {% url 'flood_risk:pipe' as pipe_url %}
-    <div class="header">
+<div class="header" xmlns:style="http://www.w3.org/1999/XSL/Transform">
         <div>
-            <a href="{{ building_url }}" type="button" class="tablink" id="curlink_1">Building</a>
-            <a href="{{ street_url }}" type="button" class="tablink" id="curlink_2">Street</a>
-            <a href="{{ manhole_url }}" type="button" class="tablink" id="curlink_3">Manhole</a>
-            <a href="{{ pipe_url }}" type="button" class="tablink" id="curlink_4">Pipe</a>
+            <a href="{{ building_url }}" type="button" class="tablink">Building</a>
+            <a href="{{ street_url }}" type="button" class="tablink">Street</a>
+            <a href="{{ manhole_url }}" type="button" class="tablink">Manhole</a>
+            <a href="{{ pipe_url }}" type="button" class="current">Pipe</a>
         </div>
     </div>
 
@@ -51,6 +51,7 @@
                         <input type="radio" name="pipe_radio" value="no">No
                         <span class="radio-inline"></span>
                     </label>
+                    <a data-toggle="modal" data-target="#pipe-flowraterad-modal"><span class="glyphicon glyphicon-info-sign"></span></a>
                     <br>
                     <text>Extract street flowrate from raster?</text>
                     <label class="radio-inline">
@@ -61,6 +62,7 @@
                         <input type="radio" name="street_radio" value="no">No
                         <span class="radio-inline"></span>
                     </label>
+                    <a data-toggle="modal" data-target="#pipe-rasterrad-modal"><span class="glyphicon glyphicon-info-sign"></span></a>
                     <br><br>
                     <label class ="control-label" for="pipe-shp-upload-input">Pipe Shapefile</label>
                     <input id ="pipe-shp-upload-input" class = "shp-upload-input" name="pipe-shp-upload-input" style="display:inline-block;" type="file" accept = ".shp, .shx, .prj, .dbf, .cpg, .sbn, .sbx, .xml" multiple>
@@ -70,48 +72,72 @@
                         <select id="pipe-field-select-0">
                             <option value="">Select Field</option>
                         </select>
+                    <text id="pipe-field-select-0-error"> </text>
                     <br>
                     <label for="pipe-field-select-1" id ="label-pipe-field-select-1" style="padding-rigth:5px;">Pipe Slope Field:</label>
                         <select id="pipe-field-select-1">
                             <option value="">Select Field</option>
                         </select>
+                    <a data-toggle="modal" data-target="#pipe-slope-modal"><span class="glyphicon glyphicon-info-sign"></span></a>
+                    <text id="pipe-field-select-1-error"> </text>
                     <br>
                         <label for="pipe-field-select-2" style="padding-rigth:5px;">Pipe Diameter Field:</label>
                         <select id="pipe-field-select-2">
                             <option value="">Select Field</option>
                         </select>
+                        <text id="pipe-field-select-2-error"> </text>
                     <br>
-                        <label for="pipe-field-select-3" id = "label-pipe-field-select-3" style="padding-rigth:5px;">Pipe Flow Field:</label>
-                        <select id="pipe-field-select-3">
-                            <option value="">Select Field</option>
-                        </select>
+                        <div id="pipe-field-select-3-group">
+                            <label for="pipe-field-select-3" id = "label-pipe-field-select-3" style="padding-rigth:5px;">Pipe Flow Field:</label>
+                            <select id="pipe-field-select-3">
+                                <option value="">Select Field</option>
+                            </select>
+                            <a data-toggle="modal" data-target="#pipe-flow-modal"><span class="glyphicon glyphicon-info-sign"></span></a>
+                            <text id="pipe-field-select-3-error"> </text>
+                        </div>
                     </div>
                     <br>
-                    <label class ="control-label" id ="label-pipe-buffer" for="pipe-buffer">Pipe Buffer: </label><input type="text" id="pipe-buffer" name="pipe_buffer" placeholder="50.0" required>
+                    <label class ="control-label" id ="label-pipe-buffer" for="pipe-buffer">Pipe Buffer: </label><input type="number" step="10.0" min="1.0" id="pipe-buffer" name="pipe_buffer" placeholder="50.0" required>
+                    <a data-toggle="modal" data-target="#pipe-buffer-modal"><span class="glyphicon glyphicon-info-sign"></span></a>
+                    <text id="pipe-buffer-error"> </text>
                     <br>
                 </div>
                 <div class="form-group street2_upload">
-                    <label class ="control-label" id ="label-depth2-shp-upload-input" for="depth2-shp-upload-input">Inundation Raster</label>
-                    <input id ="depth2-shp-upload-input" class="shp-upload-input" name="depth2-shp-upload-input" style="display:inline-block;" type="file" accept = ".tif, .tfw, .xml, .ovr" multiple>
-                    <br><br>
+                    <div id="depth2-raster">
+                        <label class ="control-label" id ="label-depth2-shp-upload-input" for="depth2-shp-upload-input">Inundation Raster</label>
+                        <input id ="depth2-shp-upload-input" class="shp-upload-input" name="depth2-shp-upload-input" style="display:inline-block;" type="file" accept = ".tif, .tfw, .xml, .ovr" multiple>
+                        <br><br>
+                    </div>
+                    <br>
                     <label class ="control-label" id ="label-street2-shp-upload-input" for="street2-shp-upload-input">Street Shapefile</label>
                     <input id ="street2-shp-upload-input" class = "shp-upload-input" name="street2-shp-upload-input" style="display:inline-block;" type="file" accept = ".shp, .shx, .prj, .dbf, .cpg, .sbn, .sbx, .xml" multiple>
                     <br>
-                    <label class ="control-label" id ="label-street2-buffer" for="street2-buffer">Street Buffer: </label><input type="text" id="street2-buffer" name="street2_buffer" placeholder="20.0" required>
-                    <br>
                     <div id="street2id-select" style="display:inline-block;" name="street2id_select">
-                    <label for="street2-field-select-0" style="padding-rigth:5px;">Street ID Field:</label>
-                        <select id="street2-field-select-0">
-                            <option value="">Select Field</option>
-                        </select>
-                    <br>
-                    <label for="street2-field-select-1" id = "label-street2-field-select-1" style="padding-rigth:5px;">Street Flow Field:</label>
-                        <select id="street2-field-select-1" name="street2_field_select_1">
-                            <option value="">Select Field</option>
-                        </select>
+                        <label for="street2-field-select-0" style="padding-rigth:5px;">Street ID Field:</label>
+                            <select id="street2-field-select-0">
+                                <option value="">Select Field</option>
+                            </select>
+                        <text id="street2-field-select-0-error"> </text>
+                        <br>
+                        <div id="street2-field-select-1-group">
+                            <label for="street2-field-select-1" id = "label-street2-field-select-1" style="padding-rigth:5px;">Street Flow Field:</label>
+                                <select id="street2-field-select-1" name="street2_field_select_1">
+                                    <option value="">Select Field</option>
+                                </select>
+                            <a data-toggle="modal" data-target="#pipe-sflow-modal"><span class="glyphicon glyphicon-info-sign"></span></a>
+                            <text id="street2-field-select-1-error"> </text>
+                        </div>
                     </div>
                     <br>
-                    <label class ="control-label" id ="label-street2-distance" for="street2-distance">Road Segment Length: </label><input type="text" id="street2-distance" name="street2_distance" placeholder="100.0" required>
+                    <div id="street2-buffer-group">
+                        <label class ="control-label" id ="label-street2-buffer" for="street2-buffer">Street Buffer: </label><input type="number" step="1.0" min="0.5" id="street2-buffer" name="street2_buffer" placeholder="20.0" required>
+                        <a data-toggle="modal" data-target="#pipe-sbuffer-modal"><span class="glyphicon glyphicon-info-sign"></span></a>
+                        <text id="street2-buffer-error"> </text>
+                    </div>
+                    <br>
+                    <label class ="control-label" id ="label-street2-distance" for="street2-distance">Road Segment Length: </label><input type="number" step="10.0" min="1" id="street2-distance" name="street2_distance" placeholder="100.0" required>
+                    <a data-toggle="modal" data-target="#pipe-slength-modal"><span class="glyphicon glyphicon-info-sign"></span></a>
+                    <text id="street2-distance-error"> </text>
                     <br>
                 </div>
                 {% gizmo button submit_pipe %}
@@ -127,6 +153,8 @@
             </div>
         </div>
     </div>
+
+    <text id="pipe-map-extent" hidden></text>
 
 {% endblock %}
 
@@ -152,6 +180,141 @@
             <p>Street ID Field: The name of the field with unique IDs for each street.</p>
             <p>Street Flow Field: The name of the field with flowrates passing over each street.</p>
             <p>Road Segment Length: The length of each street to be associated with a pipe.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" data-dismiss="modal">OK</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="pipe-flowraterad-modal" tabindex="-1" role="dialog" aria-labelledby="help-modal-label">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        </div>
+        <div class="modal-body">
+            <p>If the pipe shapefile contains a field with an observed flowrate select "Yes"</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" data-dismiss="modal">OK</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="pipe-rasterrad-modal" tabindex="-1" role="dialog" aria-labelledby="help-modal-label">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        </div>
+        <div class="modal-body">
+            <p>If the street shapefile contains a field with an observed flowrate select "No"</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" data-dismiss="modal">OK</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="pipe-slope-modal" tabindex="-1" role="dialog" aria-labelledby="help-modal-label">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        </div>
+        <div class="modal-body">
+            <p>Select the name of the field containing pipe friction slope or average slope for use in Manning's equation</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" data-dismiss="modal">OK</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="pipe-flow-modal" tabindex="-1" role="dialog" aria-labelledby="help-modal-label">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        </div>
+        <div class="modal-body">
+            <p>Select the name of the field containing observed flowrates through the pipes</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" data-dismiss="modal">OK</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="pipe-buffer-modal" tabindex="-1" role="dialog" aria-labelledby="help-modal-label">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        </div>
+        <div class="modal-body">
+            <p>Input the radius around each pipe to search for an associated street. Inputting a value greater than 30.0 is recommended</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" data-dismiss="modal">OK</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal fade" id="pipe-sflow-modal" tabindex="-1" role="dialog" aria-labelledby="help-modal-label">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        </div>
+        <div class="modal-body">
+            <p>Name of field containing flowrates over streets</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" data-dismiss="modal">OK</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="pipe-sbuffer-modal" tabindex="-1" role="dialog" aria-labelledby="help-modal-label">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        </div>
+        <div class="modal-body">
+            <p>Input the radius around each road segment to pull a maximum flowrate from</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" data-dismiss="modal">OK</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="pipe-slength-modal" tabindex="-1" role="dialog" aria-labelledby="help-modal-label">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        </div>
+        <div class="modal-body">
+            <p>Length of desired road segments to associate with maximum flowrates and pipes</p>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>

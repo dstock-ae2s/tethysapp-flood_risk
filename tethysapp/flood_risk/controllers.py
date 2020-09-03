@@ -26,7 +26,6 @@ def building(request):
     """
     Controller for the Flood Risk Layer Generation Page
     """
-
     form_submitted = False
     geoserver_engine = app.get_spatial_dataset_service(name='main_geoserver', as_engine=True)
     response = geoserver_engine.list_layers(with_properties=False)
@@ -181,15 +180,22 @@ def manhole(request):
     """
     Controller for the Manhole page.
     """
-
-    form_submitted = False
+    map_layers = []
     geoserver_engine = app.get_spatial_dataset_service(name='main_geoserver', as_engine=True)
     response = geoserver_engine.list_layers(with_properties=False)
     if response['success']:
         for layer in response['result']:
             if layer == 'flood-risk:MH_Street_Inundation':
-                form_submitted = True
-
+                geoserver_layer = MVLayer(
+                    source='ImageWMS',
+                    options={
+                        'url': 'http://localhost:8080/geoserver/wms',
+                        'params': {'LAYERS': 'flood-risk:MH_Street_Inundation'},
+                        'serverType': 'geoserver'
+                    },
+                    legend_title=""
+                )
+                map_layers.append(geoserver_layer)
 
     # Define form gizmos
     submit_manhole = Button(
@@ -206,20 +212,6 @@ def manhole(request):
         attributes={'id': 'manhole-buffer'},
         classes="input buffer-input",
     )
-    map_layers = []
-    if form_submitted:
-
-        geoserver_layer = MVLayer(
-            source='ImageWMS',
-            options={
-                'url': 'http://localhost:8080/geoserver/wms',
-                'params': {'LAYERS':'flood-risk:MH_Street_Inundation'},
-                'serverType': 'geoserver'
-            },
-            legend_title=""
-        )
-        map_layers.append(geoserver_layer)
-
 
     map_view = MapView(
         height='100%',
@@ -260,14 +252,6 @@ def pipe(request):
     Controller for the Manhole page.
     """
 
-    form_submitted = False
-    geoserver_engine = app.get_spatial_dataset_service(name='main_geoserver', as_engine=True)
-    response = geoserver_engine.list_layers(with_properties=False)
-    if response['success']:
-        for layer in response['result']:
-            if layer == 'flood-risk:Pipe_Inundation':
-                form_submitted = True
-
     # Define form gizmos
     submit_pipe = Button(
         display_text='Submit',
@@ -278,19 +262,6 @@ def pipe(request):
     )
 
     map_layers = []
-    if form_submitted:
-
-        geoserver_layer = MVLayer(
-            source='ImageWMS',
-            options={
-                'url': 'http://localhost:8080/geoserver/wms',
-                'params': {'LAYERS':'flood-risk:Pipe_Inundation'},
-                'serverType': 'geoserver'
-            },
-            legend_title=""
-        )
-        map_layers.append(geoserver_layer)
-
 
     map_view = MapView(
         height='100%',

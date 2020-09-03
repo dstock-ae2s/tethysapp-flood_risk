@@ -221,6 +221,12 @@ def manhole_process(request):
 
     if request.is_ajax() and request.method == 'POST':
 
+        street_depth = request.POST["street_depth"]
+        f_path = find_file("mhstreet_file", ".shp")
+        join_file = gpd.GeoDataFrame.from_file(f_path)
+        print("At the Beginning")
+        print(join_file.columns)
+
         manholeid = request.POST["manholeid_field"]
         buffer_val = 0.5
 
@@ -249,9 +255,14 @@ def manhole_process(request):
                     mh_inun = find_file("Manhole_Inundation", ".shp")
                     mh_inun = gpd.GeoDataFrame.from_file(mh_inun)
 
-                    f_path = find_file("Streets_Inundation", ".shp")
+                    street_depth = request.POST["street_depth"]
+                    f_path = find_file("mhstreet_file", ".shp")
                     join_file = gpd.GeoDataFrame.from_file(f_path)
-                    join_file = join_file.rename(columns={'Max_Depth': 'Street_Depth'})
+                    print("Before Rename")
+                    print(join_file.columns)
+                    print(str(street_depth))
+                    join_file = join_file.rename(columns={str(street_depth): 'St_Depth'})
+                    print(join_file.columns)
                     if manholeid in join_file.columns:
                         join_file = join_file.drop(columns=[manholeid, 'Shape_Leng', 'Shape_Area'])
 
@@ -263,18 +274,18 @@ def manhole_process(request):
 
                     # Group by objectid to take the max street depth for each manhole objectid
                     agg_manhole_street_depth = manholes_with_streets.groupby(str(manholeid)).agg(
-                        Street_Depth=('Street_Depth', 'max'))
+                        St_Depth=('St_Depth', 'max'))
 
                     # Merge file with manhole file per objectid
                     mh_inun = mh_inun.merge(agg_manhole_street_depth, on=str(manholeid))
                     mh_inun = mh_inun.rename(columns={'Max_Depth': 'MH_Depth'})
 
                     for idx, row in mh_inun.iterrows():
-                        if mh_inun.loc[idx, 'MH_Depth'] == 0 and mh_inun.loc[idx, 'Street_Depth'] == 0:
+                        if mh_inun.loc[idx, 'MH_Depth'] == 0 and mh_inun.loc[idx, 'St_Depth'] == 0:
                             mh_inun.loc[idx, 'Control'] = "Not in ROW"
-                        elif mh_inun.loc[idx, 'MH_Depth'] <= 0 and mh_inun.loc[idx, 'Street_Depth'] < 0.5:
+                        elif mh_inun.loc[idx, 'MH_Depth'] <= 0 and mh_inun.loc[idx, 'St_Depth'] < 0.5:
                             mh_inun.loc[idx, 'Control'] = "OK"
-                        elif mh_inun.loc[idx, 'MH_Depth'] <= 0 and mh_inun.loc[idx, 'Street_Depth'] >= 0.5:
+                        elif mh_inun.loc[idx, 'MH_Depth'] <= 0 and mh_inun.loc[idx, 'St_Depth'] >= 0.5:
                             mh_inun.loc[idx, 'Control'] = "Inlet Controlled"
                         elif mh_inun.loc[idx, 'MH_Depth'] > 0:
                             mh_inun.loc[idx, 'Control'] = "Storm Sewer Controlled"
@@ -300,14 +311,15 @@ def manhole_process(request):
 
                     if not os.stat(find_file("MH_Street_Inundation", ".shp")).st_size == 0:
                         move_geoserver("MH_Street_Inundation")
+                        return_obj["geoserver_layer"] = False
 
-                        map_layers = []
                         geoserver_engine = app.get_spatial_dataset_service(name='main_geoserver', as_engine=True)
                         response = geoserver_engine.list_layers(with_properties=False)
                         if response['success']:
                             for layer in response['result']:
                                 if layer == 'flood-risk:MH_Street_Inundation':
-                                    geoserver_layer = MVLayer(
+                                    geoserver_layer=[]
+                                    """geoserver_layer = MVLayer(
                                         source='ImageWMS',
                                         options={
                                             'url': 'http://localhost:8080/geoserver/wms',
@@ -315,9 +327,8 @@ def manhole_process(request):
                                             'serverType': 'geoserver'
                                         },
                                         legend_title=""
-                                    )
-                                    map_layers.append(geoserver_layer)
-                                    return_obj["layer"] = map_layers
+                                    )"""
+                                    return_obj["geoserver_layer"] = True
 
         return JsonResponse(return_obj)
 

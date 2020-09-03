@@ -9,10 +9,10 @@
     {% url 'flood_risk:pipe' as pipe_url %}
     <div class="header">
         <div>
-            <a href="{{ building_url }}" type="button" class="tablink" id="curlink_1">Building</a>
-            <a href="{{ street_url }}" type="button" class="tablink" id="curlink_2">Street</a>
-            <a href="{{ manhole_url }}" type="button" class="tablink" id="curlink_3">Manhole</a>
-            <a href="{{ pipe_url }}" type="button" class="tablink" id="curlink_4">Pipe</a>
+            <a href="{{ building_url }}" type="button" class="current">Building</a>
+            <a href="{{ street_url }}" type="button" class="tablink">Street</a>
+            <a href="{{ manhole_url }}" type="button" class="tablink">Manhole</a>
+            <a href="{{ pipe_url }}" type="button" class="tablink">Pipe</a>
         </div>
     </div>
 
@@ -43,15 +43,18 @@
                 <div class="form-group building_upload">
                     <label class ="control-label" for="bldg-shp-upload-input">Building Shapefile</label>
                     <input id ="bldg-shp-upload-input" class="shp-upload-input" name="bldg-shp-upload-input" style="display:inline-block;" type="file" accept = ".shp, .shx, .prj, .dbf" multiple>
-
+                    <br>
                     <div id="bldgid-select" style="display:inline-block;">
                     <label for="bldg-field-select-0" style="padding-rigth:5px;">Building ID Field:</label>
                         <select id="bldg-field-select-0">
                             <option value="">Select Field</option>
                         </select>
+                    <text id="bldg-field-select-0-error"> </text>
                     </div>
                     <br>
-                    <label class ="control-label" id ="label-buffer-input" for="buffer-input">Building Buffer: </label><input type="text" id="buffer-input" name="buffer_input" placeholder="5.0" required>
+                    <label class ="control-label" id ="label-buffer-input" for="buffer-input">Building Buffer: </label><input type="number" min="0.5" id="buffer-input" name="buffer_input" placeholder="5.0">
+                    <a data-toggle="modal" data-target="#building-buffer-modal"><span class="glyphicon glyphicon-info-sign"></span></a>
+                    <text id="buffer-input-error"> </text>
                     <br>
                 </div>
 
@@ -64,16 +67,20 @@
                 <div class="form-group tax_upload">
                     <label class ="control-label" for="tax-shp-upload-input">Tax Parcel Shapefile</label>
                     <input id ="tax-shp-upload-input" class="shp-upload-input" name="tax-shp-upload-input" style="display:inline-block;" type="file" accept = ".shp, .shx, .prj, .dbf" multiple>
+                    <br>
                     <div id="taxid-select" style="display:inline-block;">
                     <label for="tax-field-select-0" style="padding-rigth:5px;">Tax Parcel ID Field:</label>
                         <select id="tax-field-select-0">
                             <option value="">Select Field</option>
                         </select>
+                    <text id="tax-field-select-0-error"> </text>
                     <br>
                     <label for="tax-field-select-1" style="padding-rigth:5px;">Tax Parcel Value Field:</label>
                         <select id="tax-field-select-1">
                             <option value="">Select Field</option>
                         </select>
+                    <a data-toggle="modal" data-target="#building-tax-modal"><span class="glyphicon glyphicon-info-sign"></span></a>
+                    <text id="tax-field-select-1-error"> </text>
                     </div>
                     <br>
                 </div>
@@ -81,16 +88,20 @@
                 <div class="form-group landuse_upload">
                     <label class ="control-label" for="landuse-shp-upload-input">Land Use Shapefile</label>
                     <input id ="landuse-shp-upload-input" class="shp-upload-input" name="landuse-shp-upload-input" style="display:inline-block;" type="file" accept = ".shp, .shx, .prj, .dbf" multiple>
+                    <br>
                     <div id="landuseid-select" style="display:inline-block;">
                     <label for="landuse-field-select-0" style="padding-rigth:5px;">Land Use ID Field:</label>
                         <select id="landuse-field-select-0">
                             <option value="">Select Field</option>
                         </select>
+                    <text id="landuse-field-select-0-error"> </text>
                     <br>
                     <label for="landuse-field-select-1" style="padding-rigth:5px;">Land Use Field:</label>
                         <select id="landuse-field-select-1">
                             <option value="">Select Field</option>
                         </select>
+                    <a data-toggle="modal" data-target="#building-landuse-modal"><span class="glyphicon glyphicon-info-sign"></span></a>
+                    <text id="landuse-field-select-1-error"> </text>
                     </div>
                     <br>
                 </div>
@@ -121,7 +132,7 @@
             <p><b>This estimates the building value lost due to flooding and determines the fraction of residential loss. The result is a Landuse_Inundation shapefile with a flood depth (Max_Depth), building value loss (Lost_Value), and Residential/Nonresidential (Residential) field.</b></p>
             <p>Building Shapefile: Polygon shapefile showing footprint of buildings (accepts .shp, .shx, .prj, .dbf, .cpg, .sbn, .sbx, and .xml file types).</p>
             <p>Building ID Field: The name of the field with unique IDs for each building.</p>
-            <p>Building Buffer: The buffer around each building outline to extract the maximum depth, in the same units as raster file. It is recommended that this value be greater than 0.5 ft.</p>
+            <p>Building Buffer: The radius around each building outline to extract the maximum depth, in the same units as raster file. It is recommended that this value be greater than 0.5 ft.</p>
             <p>Inundation Raster: Flood depth raster (accepts .tif, .tfw, .xml, and .ovr file types).</p>
             <p>Tax Parcel Shapefile: Polygon shapefile showing the footprint of each tax parcel (accepts .shp, .shx, .prj, .dbf, .cpg, .sbn, .sbx, and .xml file types).</p>
             <p>Tax Parcel ID Field: The name of the field with unique IDs for each tax parcel.</p>
@@ -129,6 +140,57 @@
             <p>Land Use Shapefile: Polygon shapefile showing footprint of land use parcels (accepts .shp, .shx, .prj, .dbf, .cpg, .sbn, .sbx, and .xml file types).</p>
             <p>Land Use ID Field: The name of the field with unique IDs for each parcel.</p>
             <p>Land Use Field: The name of the field with land use designations for each parcel.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" data-dismiss="modal">OK</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="building-buffer-modal" tabindex="-1" role="dialog" aria-labelledby="help-modal-label">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        </div>
+        <div class="modal-body">
+            <p>Radius around each building outline to extract the maximum depth, in the same units as raster file. It is recommended that this value be greater than 0.5 ft</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" data-dismiss="modal">OK</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="building-landuse-modal" tabindex="-1" role="dialog" aria-labelledby="help-modal-label">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        </div>
+        <div class="modal-body">
+            <p>Name of the field with land use designations for each parcel (ex. A for residential B for commercial)</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" data-dismiss="modal">OK</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="building-tax-modal" tabindex="-1" role="dialog" aria-labelledby="help-modal-label">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        </div>
+        <div class="modal-body">
+            <p>Field name with dollar values for each tax parcel (ex. BLDGVAL)</p>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>

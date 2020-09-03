@@ -96,8 +96,16 @@ process_buildings = function(){
     landuse_field = document.getElementById("landuse-field-select-1").value;
     data.append("landuse_field", landuse_field);
 
-    var bldg_risk = ajax_update_database_with_file("building-process-ajax",data); //Submitting the data through the ajax function, see main.js for the helper function.
+    sum_check = (check(buffer, "buffer-input-error")
+                +check(buildingid_field, "bldg-field-select-0-error")
+                +check(taxid_field, "tax-field-select-0-error")
+                +check(tax_field, "tax-field-select-1-error")
+                +check(landuseid_field, "landuse-field-select-0-error")
+                +check(landuse_field, "landuse-field-select-1-error"))
 
+    if(sum_check==0){
+        var bldg_risk = ajax_update_database_with_file("building-process-ajax",data); //Submitting the data through the ajax function, see main.js for the helper function.
+    }
 };
 
 $(function(data) { //wait for the page to load
@@ -120,6 +128,21 @@ $(function(data){
         }
     });
 });
+
+function check(value, error_id){
+    if(value.trim()==""){
+        document.getElementById(error_id).innerHTML = "Field is not defined"
+        return 1;
+    }
+    else if(value.trim() =="Select Field"){
+        document.getElementById(error_id).innerHTML = "Field is not defined"
+        return 1;
+    }
+    else{
+        document.getElementById(error_id).innerHTML = ""
+        return 0;
+    }
+}
 
 $("#submit-buildings").click(process_buildings);
 

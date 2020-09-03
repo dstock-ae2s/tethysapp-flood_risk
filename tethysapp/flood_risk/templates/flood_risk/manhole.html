@@ -9,10 +9,10 @@
     {% url 'flood_risk:pipe' as pipe_url %}
     <div class="header">
         <div>
-            <a href="{{ building_url }}" type="button" class="tablink" id="curlink_1">Building</a>
-            <a href="{{ street_url }}" type="button" class="tablink" id="curlink_2">Street</a>
-            <a href="{{ manhole_url }}" type="button" class="tablink" id="curlink_3">Manhole</a>
-            <a href="{{ pipe_url }}" type="button" class="tablink" id="curlink_4">Pipe</a>
+            <a href="{{ building_url }}" type="button" class="tablink">Building</a>
+            <a href="{{ street_url }}" type="button" class="tablink">Street</a>
+            <a href="{{ manhole_url }}" type="button" class="current">Manhole</a>
+            <a href="{{ pipe_url }}" type="button" class="tablink">Pipe</a>
         </div>
     </div>
 
@@ -43,6 +43,17 @@
                 {% csrf_token %}
                 <br>
                 <div class="form-group manhole_upload">
+                    <label class ="control-label" for="mhstreet-shp-upload-input">Street Shapefile</label>
+                    <input id ="mhstreet-shp-upload-input" class = "shp-upload-input" name="mhstreet-shp-upload-input" style="display:inline-block;" type="file" accept = ".shp, .shx, .prj, .dbf, .cpg, .sbn, .sbx, .xml" multiple>
+                    <br>
+                    <div id="mhstreet-select" style="display:inline-block;">
+                    <label for="mhstreet-field-select-0" style="padding-right:5px;">Street Depth Field:</label>
+                        <select id="mhstreet-field-select-0">
+                            <option value="">Select Field</option>
+                        </select>
+                    </div>
+                    <text id="mhstreet-field-select-0-error"> </text>
+                    <br>
                     <label class ="control-label" for="manhole-shp-upload-input">Manhole Shapefile</label>
                     <input id ="manhole-shp-upload-input" class = "shp-upload-input" name="manhole-shp-upload-input" style="display:inline-block;" type="file" accept = ".shp, .shx, .prj, .dbf, .cpg, .sbn, .sbx, .xml" multiple>
                     <br>
@@ -52,18 +63,15 @@
                             <option value="">Select Field</option>
                         </select>
                     </div>
+                    <text id="manhole-field-select-0-error"> </text>
+                    <br>
+                    <label class ="control-label" id ="label-manhole-buffer" for="manhole-buffer">Manhole Buffer: </label><input type="text" id="manhole-buffer" name="manhole_buffer" placeholder="50.0" required>
+                    <a data-toggle="modal" data-target="#manhole-buffer-modal"><span class="glyphicon glyphicon-info-sign"></span></a>
+                    <text id="manhole-buffer-error"> </text>
+                    <br>
+                    <label class ="control-label" for="depth-shp-upload-input">Inundation Raster</label>
+                    <input id ="depth-shp-upload-input" class="shp-upload-input" name="depth-shp-upload-input" style="display:inline-block;" type="file" accept = ".tif, .tfw, .xml, .ovr" multiple>
                 </div>
-                <div class="toolzip"><b>Manhole Buffer: </b><input class="input buffer-input" type="text" id="manhole-buffer" name="manhole-buffer" placeholder="50">
-                    <span class="tooltiptext"><label class="glyphicon glyphicon-info-sign">_</label>Tooltip text</span>
-                </div>
-                <br>
-                <label for="manhole-buffer" style="padding-right:5px;">Manhole Buffer:</label>
-
-                <span style="white-space:nowrap; float:left; margin-left:2%; color:blue; cursor:pointer;" id=info-manhole-button class="glyphicon glyphicon-info-sign"></span>
-                <div class="toolzip"><span class="glyphicon glyphicon-info-sign"></span>
-                    <span class="tooltiptext">Radius around manhole to look for streets</span>
-                </div>
-                <br><br>
                 {% gizmo button submit_manhole %}
             </form>
         </div>
@@ -72,11 +80,14 @@
 
     <div class="row">
         <div class="col-12">
-            <div class="main">
+            <div class="main" id="manhole-map-view">
                 {% gizmo map_view %}
             </div>
         </div>
     </div>
+
+    <input type="hidden" id="manhole-hidden-extent">
+    <input type="hidden" id="manhole-hidden-centroid">
 
 {% endblock %}
 
@@ -101,6 +112,23 @@
       </div>
     </div>
   </div>
+
+  <div class="modal fade" id="manhole-buffer-modal" tabindex="-1" role="dialog" aria-labelledby="help-modal-label">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        </div>
+        <div class="modal-body">
+            <p>Radius around each manhole to search for a nearby street, in the same units as raster file. It is recommended that this value be greater than 30 ft.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" data-dismiss="modal">OK</button>
+        </div>
+      </div>
+    </div>
+  </div>
 {% endblock %}
 
 {% block content_dependent_styles %}
@@ -111,7 +139,6 @@
 
 {% block scripts %}
     {{ block.super }}
-    <script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
-    <script src="https://js.arcgis.com/4.15/"></script>
+    <script src="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v5.3.0/build/ol.js"></script>
     <script src="{% static 'flood_risk/js/manhole.js' %}" type="text/javascript"></script>
 {% endblock %}

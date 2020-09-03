@@ -75,7 +75,7 @@ function file_upload_process(data, field_list){
 };
 
 
-process_pipe = function(data) {
+function process_pipe(){
 
     var data = new FormData();
 
@@ -115,22 +115,25 @@ process_pipe = function(data) {
     street_rad = document.forms[0].elements.street_radio.value;
     data.append("street_rad", street_rad)
 
-    var pipe_risk = ajax_update_database_with_file("pipe-process-ajax",data); //Submitting the data through the ajax function, see main.js for the helper function.
-    map_bounds = pipe_risk["bounds"]
+    sum_check = (check(pipeid_field, "pipe-field-select-0-error")+check(slope, "pipe-field-select-1-error")
+                +check(diameter, "pipe-field-select-2-error")+check(flow, "pipe-field-select-3-error")
+                +check(streetid_field, "street2-field-select-0-error")+check(street_flow, "street2-field-select-1-error")
+                +check(street_buffer, "street2-buffer-error")+check(pipe_buffer, "pipe-buffer-error")
+                +check(distance, "street2-distance-error"))
+    if(sum_check==0){
+        var pipe_risk = ajax_update_database_with_file("pipe-process-ajax",data); //Submitting the data through the ajax function, see main.js for the helper function.
+        map_bounds = pipe_risk["bounds"]
+    }
 }
 
 hide_field = function(id_field){
     x = document.getElementById(id_field);
     x.style.display = "none";
-    x = document.getElementById("label-" + id_field);
-    x.style.display = "none";
 }
 
-show_field = function(id_field, style){
+show_field = function(id_field){
     x = document.getElementById(id_field);
-    x.style.display = style;
-    x = document.getElementById("label-" + id_field);
-    x.style.display = "inline";
+    x.style.display = "inline-block";
 }
 
 $(function(data) { //wait for the page to load
@@ -153,6 +156,21 @@ $(function(data){
     });
 });
 
+function check(value, error_id){
+    if(value.trim()==""){
+        document.getElementById(error_id).innerHTML = "Field is not defined"
+        return 1;
+    }
+    else if(value.trim() =="Select Field"){
+        document.getElementById(error_id).innerHTML = "Field is not defined"
+        return 1;
+    }
+    else{
+        document.getElementById(error_id).innerHTML = ""
+        return 0;
+    }
+}
+
 $("#submit-pipe").click(process_pipe);
 
 $(function(){
@@ -170,30 +188,30 @@ $(function(){
     });
 
     if(document.forms[0].elements.street_radio.value == "yes"){
-        hide_field('street2-field-select-1')
-        show_field('depth2-shp-upload-input', "inline-block")
-        show_field('street2-buffer', "inline")
+        hide_field('street2-field-select-1-group');
+        show_field('depth2-raster');
+        show_field('street2-buffer-group');
     }
     $(document.forms[0].elements.street_radio).change(function(){
         if(document.forms[0].elements.street_radio.value == "yes"){
-        hide_field('street2-field-select-1')
-        show_field('depth2-shp-upload-input', "inline-block")
-        show_field('street2-buffer', "inline")
+        hide_field('street2-field-select-1-group');
+        show_field('depth2-raster');
+        show_field('street2-buffer-group');
         } else {
-        show_field('street2-field-select-1', "inline")
-        hide_field('depth2-shp-upload-input')
-        hide_field('street2-buffer')
+        show_field('street2-field-select-1-group');
+        hide_field('depth2-raster');
+        hide_field('street2-buffer-group');
         };
     });
 
     if(document.forms[0].elements.pipe_radio.value == "no"){
-        hide_field('pipe-field-select-3')
+        hide_field('pipe-field-select-3-group');
     }
     $(document.forms[0].elements.pipe_radio).change(function(){
         if(document.forms[0].elements.pipe_radio.value == "yes"){
-        show_field('pipe-field-select-3', "inline")
+        show_field('pipe-field-select-3-group');
         } else {
-        hide_field('pipe-field-select-3')
+        hide_field('pipe-field-select-3-group');
         };
     });
 

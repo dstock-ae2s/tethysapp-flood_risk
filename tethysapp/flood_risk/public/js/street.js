@@ -4,6 +4,30 @@ var distance;
 var street_buffer;
 var streetid_field;
 
+function uploadFileNoFields(file_upload_id, file_name){
+    var shapefiles = $(file_upload_id)[0].files;
+
+    //Preparing data to be submitted via AJAX POST request
+    var data = new FormData();
+    data.append("file_name", file_name);
+    for (var i=0; i< shapefiles.length; i++){
+        data.append("shapefile", shapefiles[i])
+    }
+
+    file_upload_process_no_fields(file_upload_id, data);
+};
+
+function file_upload_process_no_fields(file_upload_id, data){
+    var file_upload = ajax_update_database_with_file("file-upload-move-files", data); //Submitting the data through the ajax function, see main.js for the helper function.
+    file_upload.done(function(return_data){
+        if("success" in return_data){
+            var file_upload_button = $(file_upload_id);
+            var file_upload_button_html = file_upload_button.html();
+            file_upload_button.text('File Uploaded');
+        };
+    });
+};
+
 function uploadFile(file_upload_id, file_name, filetype, number_fields){
 
     var shapefiles = $(file_upload_id)[0].files;
@@ -62,7 +86,12 @@ process_streets = function(data) {
     distance = document.getElementById("distance-input").value;
     data.append("distance", distance);
 
-    var street_risk = ajax_update_database_with_file("streets-process-ajax",data); //Submitting the data through the ajax function, see main.js for the helper function.
+    sum_check = (check(buffer, "street-buffer-error")
+                +check(streetid_field, "street-field-select-0-error")
+                +check(distance, "distance-input-error"))
+    if(sum_check == 0){
+        var street_risk = ajax_update_database_with_file("streets-process-ajax",data); //Submitting the data through the ajax function, see main.js for the helper function.
+    };
 };
 
 $(function(data) { //wait for the page to load
@@ -87,12 +116,30 @@ $(function(data){
     });
 });
 
+function check(value, error_id){
+    if(value.trim()==""){
+        document.getElementById(error_id).innerHTML = "Field is not defined"
+        return 1;
+    }
+    else if(value.trim() =="Select Field"){
+        document.getElementById(error_id).innerHTML = "Field is not defined"
+        return 1;
+    }
+    else{
+        document.getElementById(error_id).innerHTML = ""
+        return 0;
+    }
+};
+
 $("#submit-streets").click(process_streets);
 
 $(function(){
 
     $('#street-shp-upload-input').change(function(){
         uploadFile('#street-shp-upload-input', 'street_file', ".shp", 1);
+    });
+    $('#depth-shp-upload-input').change(function(){
+        uploadFileNoFields('#depth-shp-upload-input', 'depth_file');
     });
 
 });
