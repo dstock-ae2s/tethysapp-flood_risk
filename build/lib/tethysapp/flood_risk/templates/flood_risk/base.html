@@ -6,28 +6,29 @@
 
 {% block app_icon %}
   {# The path you provided in your app.py is accessible through the tethys_app.icon context variable #}
-  <img src="/home/dstock/AE2S_Hydrologic_Analyses/tethysapp-flood_risk/tethysapp/flood_risk/public/images/AE2S_Logo_Cropped">
 {% endblock %}
 
 {# The name you provided in your app.py is accessible through the tethys_app.name context variable #}
 {% block app_title %}{{ tethys_app.name }}{% endblock %}
 
 {% block app_navigation_items %}
-  {% url 'flood_risk:home' as home_url %}
-  {% url 'flood_risk:layer_gen' as layer_gen_url %}
-  {% url 'flood_risk:risk_analysis' as risk_analysis_url %}
+  {% url 'flood_risk:building' as building_url %}
+  {% url 'flood_risk:street' as street_url %}
+  {% url 'flood_risk:manhole' as manhole_url %}
+  {% url 'flood_risk:pipe' as pipe_url %}
 
   <li class="title">Navigation</li>
-  <li class="{% if request.path == home_url %}active{% endif %}"><a href="{{ home_url }}">Zone File Generation</a></li>
-  <li class = "{% if request.path == layer_gen_url %}active{% endif %}"><a href="{{ layer_gen_url }}">Building Risk</a></li>
-  <li class = "{% if request.path == risk_analysis_url %}active{% endif %}"><a href="{{ risk_analysis_url }}">Street Risk</a></li>
+  <li class = "{% if request.path == building_url %}active{% endif %}"><a href="{{ building_url }}">Building Risk</a></li>
+  <li class = "{% if request.path == street_url %}active{% endif %}"><a href="{{ street_url }}">Street Risk</a></li>
+  <li class = "{% if request.path == manhole_url %}active{% endif %}"><a href="{{ manhole_url }}">Manhole Risk</a></li>
+  <li class = "{% if request.path == pipe_url %}active{% endif %}"><a href="{{ pipe_url }}">Pipe Risk</a></li>
 
 {% endblock %}
 
 {% block app_content %}
 {% endblock %}
 
-{% block app_actions %}
+{% block app_actions_override %}
 {% endblock %}
 
 {% block content_dependent_styles %}

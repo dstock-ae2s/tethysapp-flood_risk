@@ -1,0 +1,152 @@
+{% extends "flood_risk/base.html" %}
+{% load tethys_gizmos %}
+{% load staticfiles %}
+
+{% block header_buttons %}
+    {% url 'flood_risk:building' as building_url %}
+    {% url 'flood_risk:street' as street_url %}
+    {% url 'flood_risk:manhole' as manhole_url %}
+    {% url 'flood_risk:pipe' as pipe_url %}
+    <div class="header">
+        <div>
+            <a href="{{ building_url }}" type="button" class="tablink">Building</a>
+            <a href="{{ street_url }}" type="button" class="current">Street</a>
+            <a href="{{ manhole_url }}" type="button" class="tablink">Manhole</a>
+            <a href="{{ pipe_url }}" type="button" class="tablink">Pipe</a>
+        </div>
+    </div>
+
+    <div class="header-button glyphicon-button" data-toggle="tooltip" data-placement="bottom" title="Help">
+        <a data-toggle="modal" data-target="#street-modal"><span class="glyphicon glyphicon-question-sign"></span></a>
+    </div>
+{% endblock %}
+
+{% block app_navigation_items %}
+  {% url 'flood_risk:building' as building_url %}
+  {% url 'flood_risk:street' as street_url %}
+  {% url 'flood_risk:manhole' as manhole_url %}
+  {% url 'flood_risk:pipe' as pipe_url %}
+
+  <li class="title">Navigation</li>
+  <li class = "{% if request.path == building_url %}active{% endif %}"><a href="{{ building_url }}">Building Risk</a></li>
+  <li class = "{% if request.path == street_url %}active{% endif %}"><a href="{{ street_url }}">Street Risk</a></li>
+  <li class = "{% if request.path == manhole_url %}active{% endif %}"><a href="{{ manhole_url }}">Manhole Risk</a></li>
+  <li class = "{% if request.path == pipe_url %}active{% endif %}"><a href="{{ pipe_url }}">Pipe Risk</a></li>
+
+{% endblock %}
+
+{% block app_content %}
+     <div class="row" style="display:block;" id="street-menu">
+        <div class="col-12 menu">
+            <form action="" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <br>
+                <div class="form-group street_upload">
+                    <label class ="control-label" for="street-shp-upload-input">Street Shapefile</label>
+                    <input id ="street-shp-upload-input" class = "shp-upload-input" name="street-shp-upload-input" style="display:inline-block;" type="file" accept = ".shp, .shx, .prj, .dbf, .cpg, .sbn, .sbx, .xml" multiple>
+                    <br>
+                    <div id="streetid-select" style="display:inline-block;">
+                    <label for="street-field-select-0" style="padding-rigth:5px;">Street ID Field:</label>
+                        <select id="street-field-select-0">
+                            <option value="">Select Field</option>
+                        </select>
+                    </div>
+                    <text id="street-field-select-0-error"> </text>
+                    <br>
+                    <label class ="control-label" id ="label-street-buffer" for="street-buffer">Street Buffer: </label><input type="text" id="street-buffer" name="street_buffer" placeholder="20.0" required>
+                    <a data-toggle="modal" data-target="#street-buffer-modal"><span class="glyphicon glyphicon-info-sign"></span></a>
+                    <text id="street-buffer-error"> </text>
+                    <br>
+                    <label class ="control-label" id ="label-distance-input" for="distance-input">Road Segment Length: </label><input type="text" id="distance-input" name="distance_input" placeholder="100.0" required>
+                    <a data-toggle="modal" data-target="#street-distance-modal"><span class="glyphicon glyphicon-info-sign"></span></a>
+                    <text id="distance-input-error"> </text>
+                    <br>
+                    <label class ="control-label" for="depth-shp-upload-input">Inundation Raster</label>
+                    <input id ="depth-shp-upload-input" class="shp-upload-input" name="depth-shp-upload-input" style="display:inline-block;" type="file" accept = ".tif, .tfw, .xml, .ovr" multiple>
+                </div>
+                {% gizmo button submit_streets %}
+            </form>
+        </div>
+    </div>
+    <button type = "button" class = "collapsible">- Hide Inputs</button>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="main">
+                {% gizmo map_view %}
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block after_app_content %}
+  <div class="modal fade" id="street-modal" tabindex="-1" role="dialog" aria-labelledby="help-modal-label">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          <h5 class="modal-title" id="help-modal-label">Street Page</h5>
+        </div>
+        <div class="modal-body">
+            <p><b>This extracts the maximum flood depth on each road segment from the inundation raster (Buildings Page) and exports the result as a Streets_Inundation shapefile with a depth (Max_Depth).</b></p>
+            <p>Street Shapefile: Line shapefile showing locations of streets (accepts .shp, .shx, .prj, .dbf, .cpg, .sbn, .sbx, and .xml file types).</p>
+            <p>Street ID Field: The name of the field with unique IDs for each street.</p>
+            <p>Road Segment Length: The length of each street to be associated with each depth. Roads are divided if longer than this length</p>
+            <p>Street Buffer: The distance around each street centerline to search for a maximum flowrate, in the same units as raster file. It is recommended that this value be equal to the average street width.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" data-dismiss="modal">OK</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="street-buffer-modal" tabindex="-1" role="dialog" aria-labelledby="help-modal-label">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        </div>
+        <div class="modal-body">
+            <p>Radius around each road segment to pull a maximum depth from. Could be equal to road width</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" data-dismiss="modal">OK</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="street-distance-modal" tabindex="-1" role="dialog" aria-labelledby="help-modal-label">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        </div>
+        <div class="modal-body">
+            <p>Length of desired road segments to associated with maximum depth</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" data-dismiss="modal">OK</button>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block content_dependent_styles %}
+    {{ block.super }}
+    <link href="{% static 'flood_risk/css/main.css' %}" rel="stylesheet"/>
+    <link rel="stylesheet" href="{% static 'flood_risk/css/map.css' %}" />
+{% endblock %}
+
+{% block scripts %}
+    {{ block.super }}
+    <script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+    <script src="https://js.arcgis.com/4.15/"></script>
+    <script src="{% static 'flood_risk/js/street.js' %}" type="text/javascript"></script>
+{% endblock %}
