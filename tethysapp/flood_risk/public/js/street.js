@@ -95,80 +95,30 @@ process_streets = function(data) {
     if(sum_check == 0){
         var street_risk = ajax_update_database_with_file("streets-process-ajax",data); //Submitting the data through the ajax function, see main.js for the helper function.
         street_risk.done(function(return_data){
-            console.log("PREVIOUS TARGET")
-            console.log(previous_target);
+
             ol_map = TETHYS_MAP_VIEW.getMap();
-//            changeTheTarget(previous_target, ol_map);
             document.getElementById("street_map").classList.remove("hideDiv");
             ol_map.setSize(previous_size);
             ol_map.renderSync();
+            (document.getElementsByClassName("collapsible"))[0].click();
 
-            console.log(ol_map.getViewport());
-            console.log(ol_map.getSize());
-            console.log(ol_map.getView());
-            var styles = {
-                'Point': new ol.style.Style({
-                    image: new ol.style.Circle({
-                        radius: 20,
-                        fill: null,
-                        stroke: new ol.style.Stroke({color: 'red', width: 1}),
-                    }),
-                }),
-                'LineString': new ol.style.Style({
+            var styles = [
+                new ol.style.Style({
                     stroke: new ol.style.Stroke({
-                        color: 'green',
-                        width: 20,
-                    }),
+                        color: '#A9A9A9',
+                        width: 6,
+                        zIndex: 0
+                    })
                 }),
-                'GeometryCollection': new ol.style.Style({
+                new ol.style.Style({
                     stroke: new ol.style.Stroke({
-                        color: 'magenta',
-                        width: 20,
-                    }),
-                    fill: new ol.style.Fill({
-                        color: 'magenta',
-                    }),
-                    image: new ol.style.Circle({
-                        radius: 20,
-                        fill: null,
-                        stroke: new ol.style.Stroke({
-                            color: 'magenta',
-                        }),
-                    }),
-                }),
-                'Circle': new ol.style.Style({
-                    stroke: new ol.style.Stroke({
-                        color: 'red',
-                        width: 20,
-                    }),
-                    fill: new ol.style.Fill({
-                        color: 'rgba(255,0,0,0.2)',
-                    }),
-                }),
-            };
-            var styleFunction = function(feature) {
-                return styles[feature.getGeometry().getType()];
-            };
-//            geojson_style =  new ol.style.Style({
-//                stroke: new ol.style.Stroke({
-//                    color: 'red',
-//                    width: 20
-//                }),
-//                fill: new ol.style.Fill({
-//                    color: 'green'
-//                }),
-//                image: new ol.style.Circle({
-//                    radius: 10,
-//                    fill: new ol.style.Fill({
-//                        color: 'red'
-//                    }),
-//                    stroke: new ol.style.Stroke({
-//                        color: 'red',
-//                        width: 2
-//                    })
-//                })
-//            });
-//
+                        color: '#FFD300',
+                        width: 5,
+                        zIndex: 1
+                    })
+                })
+            ];
+
             var geojson_object = {
                 'type': 'FeatureCollection',
                 'crs': {
@@ -180,112 +130,65 @@ process_streets = function(data) {
                 'features': return_data.streets_features
             };
 
-//            var geojson_object = {
-//                'type': 'FeatureCollection',
-//                'crs': {
-//                    'type': 'name',
-//                    'properties': {
-//                        'name': 'EPSG:4326',
-//                    },
-//                },
-//                'features': [
-//                {
-//                    'type': 'Feature',
-//                    'geometry': {
-//                        'type': 'LineString',
-//                        'coordinates': [
-//                            [35.15625, 18.31281],
-//                            [73.125, -18.64624] ],
-//                    },
-//                } ],
-//            };
-
-            console.log(return_data.streets_features)
-            console.log(geojson_object)
-
-//            var vectorSource = new ol.source.Vector({
-//                features: new ol.format.GeoJSON().readFeatures(geojson_object),
-//            });
+            var these_features = new ol.format.GeoJSON().readFeatures(geojson_object);
 
             var vectorSource = new ol.source.Vector({
-                features: new ol.format.GeoJSON().readFeatures(geojson_object)
+                features: these_features
             });
-
-            vectorSource.addFeature(new ol.Feature(new ol.geom.Circle([5e6, 7e6], 1e6)));
-//            vectorSource.addFeature(new ol.Feature(new ol.geom.LineString([[4e6, 2e6], [8e6,-2e6]])));
-
-            console.log("After features")
-
-//            var streetLayer = new ol.layer.Vector({
-//                title: 'Streets',
-//                source: vectorSource,
-//                style: styleFunction,
-//            });
 
             var streetLayer = new ol.layer.Vector({
-                title: 'Streets',
+                name: 'Streets',
                 source: vectorSource,
-                style: styleFunction,
+                style: styles,
             });
 
-            console.log("After layer")
-            console.log(streetLayer)
-
-//            geojson_layer = MVLayer(
-//                source='GeoJSON',
-//                options=geojson_object,
-//                layer_options={'style': style},
-//                legend_title='Test GeoJSON',
-//                legend_extent=[-46.7, -48.5, 74, 59],
-//                legend_classes=[
-//                    MVLegendClass('line', 'Lines', stroke='red')
-//                ],
-//            );
             ol_map = TETHYS_MAP_VIEW.getMap();
             ol_map.addLayer(streetLayer);
-            TETHYS_MAP_VIEW.updateLegend();
+            ol_map = TETHYS_MAP_VIEW.getMap();
 
-//            $(function(){
-//                ol_map = TETHYS_MAP_VIEW.getMap();
-//                ol_map.addLayer(streetLayer);
-//                TETHYS_MAP_VIEW.updateLegend();
-//                ol_map.setSize(previous_size);
-//                ol_map.renderSync();
-//            });
+            // Define a new legend
+            var legend = new ol.control.Legend({
+                title: 'Legend',
+                margin: 5,
+                collapsed: false
+            });
+            ol_map.addControl(legend);
+            legend.addRow({
+                title: 'Streets',
+                typeGeom:'Point',
+                style: new ol.style.Style({
+                    image: new ol.style.RegularShape({
+                        points: 4,
+                        radius: 10,
+                        angle: Math.PI / 4,
+                        stroke: new ol.style.Stroke({ color: '#A9A9A9', width: 2 }),
+                        fill: new ol.style.Fill({ color: '#FFD300'})
+                    })
+                })
+            });
             TETHYS_MAP_VIEW.zoomToExtent(return_data.extent)
         });
     };
 };
 
-function changeTheTarget(previousTarget, ol_map){
-    ol_map.setTarget(previousTarget);
-    console.log("FIN")
-}
-
 $(function(data) { //wait for the page to load
     console.log("PAGE LOADED")
     ol_map = TETHYS_MAP_VIEW.getMap();
-    previous_target = ol_map.getTargetElement();
     previous_size = ol_map.getSize();
-    console.log(ol_map.getViewport());
-    console.log(ol_map.getSize());
-    console.log(ol_map.getView());
-    previous_viewport = ol_map.getViewport();
-//    document.getElementById("street_map").classList.add("hideDiv");
-//    ol_map.setTarget(null);
+    document.getElementById("street_map").classList.add("hideDiv");
 });
 
 $(function(data){
     var coll = document.getElementsByClassName("collapsible");
     coll[0].addEventListener("click", function(){
-        this.classList.toggle("active")
-        var this_content = document.getElementById('street-menu')
-        if(this_content.style.display === "block") {
-            this_content.style.display = "none";
-            coll[0].innerHTML = "+Show Inputs"
-        } else {
-            this_content.style.display = "block";
-            coll[0].innerHTML = "-Hide Inputs"
+        console.log(coll[0].innerHTML)
+        if(coll[0].innerHTML == '<i class="fa fa-toggle-up"></i>'){
+            coll[0].innerHTML = '<i class="fa fa-toggle-down"></i>';
+            document.getElementById('street-menu').classList.add("hideDiv");
+        }
+        else{
+            coll[0].innerHTML = '<i class="fa fa-toggle-up"></i>';
+            document.getElementById('street-menu').classList.remove("hideDiv");
         }
     });
 });

@@ -201,95 +201,28 @@ def streets_process(request):
                 streets_divided = gpd.read_file(find_file("Streets_divided", ".shp"))
                 streets_divided.fillna(0, inplace=True)
                 streets_with_depth = streets_divided.merge(raster_stats_dataframe, on='Index')
-
                 if not streets_with_depth.empty:
-                    inProj = Proj(init=streets_with_depth.crs)
-                    outProj = Proj(init='epsg:4326')
-                    this_extent = (streets_with_depth.total_bounds).tolist()
-                    x1, y1 = this_extent[0], this_extent[1]
-                    x1, y1 = transform(inProj, outProj, x1, y1)
-                    x2, y2 = this_extent[2], this_extent[3]
-                    x2, y2 = transform(inProj, outProj, x2, y2)
-                    this_extent = [x1, y1, x2, y2]
-
-                    this_centroid = centroid(this_extent)
-
-                    return_obj["centroid"] = this_centroid
-                    return_obj["extent"] = this_extent
-                    return_obj["layer"] = 'flood-risk:Streets_Inundation'
+                    # Find the map extent in EPSG:4326 to zoom to layer extent
+                    proj_st_with_depth = streets_with_depth.to_crs("EPSG:4326")
+                    if not proj_st_with_depth.empty:
+                        this_bounds = proj_st_with_depth.total_bounds
+                        x1, y1, x2, y2 = this_bounds[0], this_bounds[1], this_bounds[2], this_bounds[3]
+                        this_extent = [x1, y1, x2, y2]
+                        return_obj["extent"] = this_extent
 
                     mk_change_directory("Streets_Inundation")
                     streets_with_depth.to_file(filename=("Streets_Inundation.shp"))
 
-                    # Convert all coordinates to EPSG:4326
-                    print(streets_with_depth['geometry'].head())
+                    # Convert all coordinates to EPSG:3857 for openlayers vector layer
                     streets_with_depth = streets_with_depth.to_crs("EPSG:3857")
-                    print("TRANSFORM")
-                    print(streets_with_depth['geometry'].head())
                     streets_with_depth.to_file(filename=("Streets_Inundation.geojson"), driver='GeoJSON')
                     mk_change_directory("Streets_Inundation")
                     streets_features = []
                     if not os.stat(find_file("Streets_Inundation", ".geojson")).st_size == 0:
-                        print("In the if statement")
                         with fiona.open("Streets_Inundation.geojson") as data_file:
                             for data in data_file:
                                 streets_features.append(data)
                             return_obj["streets_features"] = streets_features
-                    # streets_features = []
-                    # mk_change_directory("Streets_Inundation")
-                    # if not os.stat(find_file("Streets_Inundation", ".geojson")).st_size == 0:
-                    #     print("In the if statement")
-                    #     with fiona.open("Streets_Inundation.geojson") as data_file:
-                    #         layer_crs = (str(data_file.crs['init'])).upper()
-                    #         print(layer_crs)
-                    #
-                    #         for data in data_file:
-                    #             streets_features.append(data)
-                    #
-                    #         style = {'ol.style.Style': {
-                    #             'stroke': {'ol.style.Stroke': {
-                    #                 'color': 'red',
-                    #                 'width': 20
-                    #             }},
-                    #             'fill': {'ol.style.Fill': {
-                    #                 'color': 'green'
-                    #             }},
-                    #             'image': {'ol.style.Circle': {
-                    #                 'radius': 10,
-                    #                 'fill': None,
-                    #                 'stroke': {'ol.style.Stroke': {
-                    #                     'color': 'red',
-                    #                     'width': 2
-                    #                 }}
-                    #             }}
-                    #         }}
-                    #
-                    #         geojson_object = {
-                    #             'type': 'FeatureCollection',
-                    #             'crs': {
-                    #                 'type': 'name',
-                    #                 'properties': {
-                    #                     'name': layer_crs
-                    #                 }
-                    #             },
-                    #             'features': streets_features
-                    #         }
-                    #
-                    #         geojson_layer = MVLayer(
-                    #             source='GeoJSON',
-                    #             options=geojson_object,
-                    #             layer_options={'style': style},
-                    #             legend_title='Test GeoJSON',
-                    #             legend_extent=[-46.7, -48.5, 74, 59],
-                    #             legend_classes=[
-                    #                 MVLegendClass('line', 'Lines', stroke='red')
-                    #             ],
-                    #         )
-                    #         return_obj['streets_layer'] = geojson_layer
-
-                    # if not os.stat(find_file("Streets_Inundation", ".shp")).st_size == 0:
-                    #     move_geoserver("Streets_Inundation")
-
 
         return JsonResponse(return_obj)
 

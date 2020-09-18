@@ -99,58 +99,57 @@ def street(request):
     Controller for the Street Risk Analysis Page
     """
 
-    streets_features = []
-    layer_crs = 'EPSG:4326'
-    mk_change_directory("Streets_Inundation")
-    if not os.stat(find_file("Streets_Inundation", ".geojson")).st_size == 0:
-        print("In the if statement")
-        with fiona.open("Streets_Inundation.geojson") as data_file:
-            layer_crs = (str(data_file.crs['init'])).upper()
-            print(layer_crs)
-
-            for data in data_file:
-                # data['geometry'] = transform.transform_geom(src_crs=data_file.crs, dst_crs='EPSG:4326', geom=data['geometry'])
-                streets_features.append(data)
-
-            style = {'ol.style.Style': {
-                'stroke': {'ol.style.Stroke': {
-                    'color': 'red',
-                    'width': 20
-                }},
-                'fill': {'ol.style.Fill': {
-                    'color': 'green'
-                }},
-                'image': {'ol.style.Circle': {
-                    'radius': 10,
-                    'fill': None,
-                    'stroke': {'ol.style.Stroke': {
-                        'color': 'red',
-                        'width': 2
-                    }}
-                }}
-            }}
-
-            geojson_object = {
-                'type': 'FeatureCollection',
-                'crs': {
-                    'type': 'name',
-                    'properties': {
-                        'name': "EPSG:4326"
-                    }
-                },
-                'features': streets_features
-            }
-
-            geojson_layer = MVLayer(
-                source='GeoJSON',
-                options=geojson_object,
-                layer_options={'style': style},
-                legend_title='Test GeoJSON',
-                legend_extent=[-46.7, -48.5, 74, 59],
-                legend_classes=[
-                    MVLegendClass('line', 'Lines', stroke='red')
-                ],
-            )
+    # layer_crs = 'EPSG:4326'
+    # mk_change_directory("Streets_Inundation")
+    # if not os.stat(find_file("Streets_Inundation", ".geojson")).st_size == 0:
+    #     print("In the if statement")
+    #     with fiona.open("Streets_Inundation.geojson") as data_file:
+    #         layer_crs = (str(data_file.crs['init'])).upper()
+    #         print(layer_crs)
+    #
+    #         for data in data_file:
+    #             # data['geometry'] = transform.transform_geom(src_crs=data_file.crs, dst_crs='EPSG:4326', geom=data['geometry'])
+    #             streets_features.append(data)
+    #
+    #         style = {'ol.style.Style': {
+    #             'stroke': {'ol.style.Stroke': {
+    #                 'color': 'red',
+    #                 'width': 20
+    #             }},
+    #             'fill': {'ol.style.Fill': {
+    #                 'color': 'green'
+    #             }},
+    #             'image': {'ol.style.Circle': {
+    #                 'radius': 10,
+    #                 'fill': None,
+    #                 'stroke': {'ol.style.Stroke': {
+    #                     'color': 'red',
+    #                     'width': 2
+    #                 }}
+    #             }}
+    #         }}
+    #
+    #         geojson_object = {
+    #             'type': 'FeatureCollection',
+    #             'crs': {
+    #                 'type': 'name',
+    #                 'properties': {
+    #                     'name': "EPSG:4326"
+    #                 }
+    #             },
+    #             'features': streets_features
+    #         }
+    #
+    #         geojson_layer = MVLayer(
+    #             source='GeoJSON',
+    #             options=geojson_object,
+    #             layer_options={'style': style},
+    #             legend_title='Test GeoJSON',
+    #             legend_extent=[-46.7, -48.5, 74, 59],
+    #             legend_classes=[
+    #                 MVLegendClass('line', 'Lines', stroke='red')
+    #             ],
+    #         )
 
     view_options = MVView(
         projection='EPSG:4326',
@@ -167,8 +166,8 @@ def street(request):
     MapView.old_version = '5.3.0'
 
     map_view = MapView(
-        height='600px',
-        width='100%',
+        height='400px',
+        width='600px',
         controls=['ZoomSlider', 'Rotate', 'FullScreen',
                   {'MousePosition': {'projection': 'EPSG:4326'}},
                   {'ZoomToExtent': {'projection': 'EPSG:4326', 'extent': [-130, 22, -65, 54]}}],
@@ -176,7 +175,7 @@ def street(request):
         view=view_options,
         basemap=basemaps,
         draw=drawing_options,
-        legend=True
+        legend=False
     )
 
     submit_streets = Button(
