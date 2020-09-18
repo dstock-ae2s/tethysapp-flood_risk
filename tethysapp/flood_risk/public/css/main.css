@@ -56,15 +56,6 @@
 .col-11 {width: 91.66%;}
 .col-12 {width: 100%;}
 
-.map-view {width: 100%;}
-[class*="map-view"] {
-    float: left;
-    padding-left: 20px;
-    padding-top: 0px;
-    padding-bottom: 0px;
-    padding-right: 0px;
-    display: block;
-}
 
 /* Style the button that is used to open and close the collapsible content */
 .collapsible {
@@ -78,7 +69,6 @@
     width: 20px;
     transition: all 0.5s;
     cursor: pointer;
-    margin: 5px;
     float: left;
 }
 
@@ -236,13 +226,12 @@ input.invalid {
 }
 
 .input-menu {
-    margin: 5px;
+    margin: 20px;
 }
 
 .map {
-    padding: 0;
-    height: 400px;
-    width: 600px;
+    height: 95%;
+    width: 100%;
 }
 
 .ol-legend ul {
@@ -251,22 +240,6 @@ input.invalid {
 .ol-legend ul li {
     overflow: visible;
     text-align: right;
-}
-
-
-#showmap {
-    padding: 5px;
-    margin: 5px;
-    height: 600px;
-    width: 100%;
-}
-#showzonemap {
-    padding: 5px;
-    margin: 5px;
-    height: 500px;
-    width: 600px;
-    float: right
-
 }
 
 /* Make circles that indicate the steps of the form: */

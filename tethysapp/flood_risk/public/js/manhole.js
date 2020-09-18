@@ -1,11 +1,14 @@
+/*
+Declaring global variables
+*/
+var buffer; //Buffer around manholes to pull max depth from
+var distance; //Road segment length
+var manholeid_field; //ID of manhole from input shapefile
+var previous_size; //Size of map contained within map div
 
-var buffer;
-var manholeid_field;
-var map_bounds;
-var ol_layer;
-var extent;
-
-
+/*
+Function to upload input files without fields to the user workspace
+*/
 function uploadFileNoFields(file_upload_id, file_name){
     var shapefiles = $(file_upload_id)[0].files;
 
@@ -19,6 +22,10 @@ function uploadFileNoFields(file_upload_id, file_name){
     file_upload_process_no_fields(file_upload_id, data);
 };
 
+/*
+Helper function
+Passes files without fields to the ajax to be uploaded to the user workspace
+*/
 function file_upload_process_no_fields(file_upload_id, data){
     var file_upload = ajax_update_database_with_file("file-upload-move-files", data); //Submitting the data through the ajax function, see main.js for the helper function.
     file_upload.done(function(return_data){
@@ -30,6 +37,9 @@ function file_upload_process_no_fields(file_upload_id, data){
     });
 };
 
+/*
+Function to upload input files with fields to the user workspace
+*/
 function uploadFile(file_upload_id, file_name, filetype, number_fields){
 
     var shapefiles = $(file_upload_id)[0].files;
@@ -51,6 +61,10 @@ function uploadFile(file_upload_id, file_name, filetype, number_fields){
     file_upload_process(data, field_list);
 };
 
+/*
+Helper function
+Passes files with fields to the ajax to be uploaded to the user workspace
+*/
 function file_upload_process(data, field_list){
     var file_upload = ajax_update_database_with_file("file-upload", data); //Submitting the data through the ajax function, see main.js for the helper function.
     file_upload.done(function(return_data){ //Reset the form once the data is added succesfully
@@ -75,10 +89,16 @@ function file_upload_process(data, field_list){
     });
 };
 
+/*
+Function which extracts flood depths over manholes from raster
+and compares this with street flood depth to determine if manholes
+are inlet or storm sewer controlled
+*/
 process_manhole = function(data) {
 
     var data = new FormData();
 
+    // Read in input values
     manholeid_field = document.getElementById("manhole-field-select-0").value;
     data.append("manholeid_field", manholeid_field)
 
@@ -88,6 +108,7 @@ process_manhole = function(data) {
     buffer = document.getElementById("manhole-buffer").value;
     data.append("buffer", buffer);
 
+    // Check for errors in input values
     sum_check = (check(buffer, "manhole-buffer-error")
                 +check(manholeid_field, "manhole-field-select-0-error")
                 +check(street_depth, "mhstreet-field-select-0-error"))
@@ -96,70 +117,83 @@ process_manhole = function(data) {
     if(sum_check == 0){
         var manhole_risk = ajax_update_database_with_file("manhole-process-ajax",data); //Submitting the data through the ajax function, see main.js for the helper function.
             manhole_risk.done(function(return_data){
-                if("extent" in return_data){
-                    if(document.readyState == 'complete'){
-                        centroid = return_data.centroid;
-                        extent = return_data.extent;
-                        document.getElementById("manhole-hidden-extent").innerHTML = extent;
-                        document.getElementById("manhole-hidden-centroid").innerHTML = centroid;
-                        ol_map = TETHYS_MAP_VIEW.getMap();
-                        ol_map.getLayers().forEach(layer => layer.getSource().refresh());
-                        TETHYS_MAP_VIEW.zoomToExtent(extent);
-                        //if(document.readyState=='complete'){
-                           // ol_map = TETHYS_MAP_VIEW.getMap();
-                            //ol_layer = MVLayer(
-                             //   source='ImageWMS',
-                             //   options={
-                              //     'url': 'http://localhost:8080/geoserver/wms',
-                              //     'params': {'LAYERS': 'flood-risk:MH_Street_Inundation'},
-                               //    'serverType': 'geoserver'
-                               // },
-                               // legend_title=""
-                           // )
+                ol_map = TETHYS_MAP_VIEW.getMap();
+                document.getElementById("manhole_map").classList.remove("hideDiv"); // Show the map
+                ol_map.setSize(previous_size); // Resize the map to fit the div
+                ol_map.renderSync(); // Update the map
+                (document.getElementsByClassName("collapsible"))[0].click(); // Collapse input menu div
 
-                         //   if (return_data.geoserver_layer){
-                              //  ol_layer = new ol.layer.Image({
-                              //      extent: return_data.extent,
-                              //      source: new ol.source.ImageWMS({
-                              //          url: 'http://localhost:8080/geoserver/wms',
-                             //           params: {'LAYERS': 'flood-risk:MH_Street_Inundation'},
-                             //           ratio: 1,
-                              //          serverType: 'geoserver',
-                             //       }),
-                             //   });
-                           //     console.log("OL LAYER")
-                             //   console.log(ol_layer)
-                             //   ol_map.addLayer(ol_layer);
-                            //}
-                        //}
-                    }
+                // Style manhole layer
+                var styles = [
+                    new ol.style.Style({
+                        image: new ol.style.Circle({
+                            radius: 5,
+                            fill: new ol.style.Fill({
+                                color: 'red',
+                            }),
+                        }),
+                    })
+                ];
 
-                }
+                // Create a geojson object holding manhole features
+                var geojson_object = {
+                    'type': 'FeatureCollection',
+                    'crs': {
+                        'type': 'name',
+                        'properties': {
+                            'name': 'EPSG:3857'
+                        }
+                    },
+                    'features': return_data.mh_features
+                };
+
+                // Convert from geojson to openlayers collection
+                var these_features = new ol.format.GeoJSON().readFeatures(geojson_object);
+
+                // Create a new ol source and assign manhole features
+                var vectorSource = new ol.source.Vector({
+                    features: these_features
+                });
+
+                // Create a new modifiable layer and assign source and style
+                var manholeLayer = new ol.layer.Vector({
+                    name: 'Manholes',
+                    source: vectorSource,
+                    style: styles,
+                });
+
+                // Add manholes layer to map
+                ol_map = TETHYS_MAP_VIEW.getMap();
+                ol_map.addLayer(manholeLayer);
+                ol_map = TETHYS_MAP_VIEW.getMap();
+
+                // Define a new legend
+                var legend = new ol.control.Legend({
+                    title: 'Legend',
+                    margin: 5,
+                    collapsed: false
+                });
+                ol_map.addControl(legend);
+                legend.addRow({
+                    title: 'Manholes',
+                    typeGeom:'Point',
+                    style: new ol.style.Style({
+                        image: new ol.style.Circle({
+                            radius: 5,
+                            fill: new ol.style.Fill({
+                                color: 'red',
+                            }),
+                        })
+                    })
+                });
+                TETHYS_MAP_VIEW.zoomToExtent(return_data.extent) // Zoom to layer
             });
     }
 }
 
-$(function(data) { //wait for the page to load
-    console.log("PAGE LOADED")
-    ol_map = TETHYS_MAP_VIEW.getMap();
-    console.log(ol_map)
-});
-
-$(function(data){
-    var coll = document.getElementsByClassName("collapsible");
-    coll[0].addEventListener("click", function(){
-        this.classList.toggle("active")
-        var this_content = document.getElementById('manhole-menu')
-        if(this_content.style.display === "block") {
-            this_content.style.display = "none";
-            coll[0].innerHTML = "+Show Inputs"
-        } else {
-            this_content.style.display = "block";
-            coll[0].innerHTML = "-Hide Inputs"
-        }
-    });
-});
-
+/*
+Function to check input fields for errors and return 1 if errors are found
+*/
 function check(value, error_id){
     if(value.trim()==""){
         document.getElementById(error_id).innerHTML = "Field is not defined"
@@ -175,6 +209,34 @@ function check(value, error_id){
     }
 };
 
+
+/*
+Function to hide input menu div when button is clicked
+*/
+$(function(data){
+    var coll = document.getElementsByClassName("collapsible");
+    coll[0].addEventListener("click", function(){
+        console.log(coll[0].innerHTML)
+        if(coll[0].innerHTML == '<i class="fa fa-toggle-up"></i>'){
+            coll[0].innerHTML = '<i class="fa fa-toggle-down"></i>';
+            document.getElementById('manhole-menu').classList.add("hideDiv");
+        }
+        else{
+            coll[0].innerHTML = '<i class="fa fa-toggle-up"></i>';
+            document.getElementById('manhole-menu').classList.remove("hideDiv");
+        }
+    });
+});
+
+/*
+Function to retrieve map, retrieve map size, and hide map on page load
+*/
+$(function(data) { //wait for the page to load
+    console.log("PAGE LOADED")
+    ol_map = TETHYS_MAP_VIEW.getMap();
+    previous_size = ol_map.getSize(); // Retrieve map size
+    document.getElementById("manhole_map").classList.add("hideDiv"); // Hide ol map
+});
 
 $("#submit-manhole").click(process_manhole);
 

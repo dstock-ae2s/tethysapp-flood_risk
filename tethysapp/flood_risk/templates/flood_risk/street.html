@@ -43,7 +43,6 @@
      <div class="input-menu" id="street-menu">
         <form action="" method="post" enctype="multipart/form-data">
             {% csrf_token %}
-            <br>
             <div class="form-group street_upload">
                 <label class ="control-label" for="street-shp-upload-input">Street Shapefile</label>
                 <input id ="street-shp-upload-input" class = "shp-upload-input" name="street-shp-upload-input" style="display:inline-block;" type="file" accept = ".shp, .shx, .prj, .dbf, .cpg, .sbn, .sbx, .xml" multiple>
@@ -56,11 +55,11 @@
                 </div>
                 <text id="street-field-select-0-error"> </text>
                 <br>
-                <label class ="control-label" id ="label-street-buffer" for="street-buffer">Street Buffer: </label><input type="text" id="street-buffer" name="street_buffer" placeholder="20.0" required>
+                <label class ="control-label" id ="label-street-buffer" for="street-buffer">Street Buffer: </label><input type="number" step="1.0" min="0.5" id="street-buffer" name="street_buffer" placeholder="20.0" required>
                 <a data-toggle="modal" data-target="#street-buffer-modal"><span class="glyphicon glyphicon-info-sign"></span></a>
                 <text id="street-buffer-error"> </text>
                 <br>
-                <label class ="control-label" id ="label-distance-input" for="distance-input">Road Segment Length: </label><input type="text" id="distance-input" name="distance_input" placeholder="100.0" required>
+                <label class ="control-label" id ="label-distance-input" for="distance-input">Road Segment Length: </label><input type="number" step="10.0" min="1.0" id="distance-input" name="distance_input" placeholder="100.0" required>
                 <a data-toggle="modal" data-target="#street-distance-modal"><span class="glyphicon glyphicon-info-sign"></span></a>
                 <text id="distance-input-error"> </text>
                 <br>
@@ -93,6 +92,7 @@
             <p>Street ID Field: The name of the field with unique IDs for each street.</p>
             <p>Road Segment Length: The length of each street to be associated with each depth. Roads are divided if longer than this length</p>
             <p>Street Buffer: The distance around each street centerline to search for a maximum flowrate, in the same units as raster file. It is recommended that this value be equal to the average street width.</p>
+            <p>Inundation Raster: Flood depth raster (accepts .tif, .tfw, .xml, and .ovr file types).</p>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>

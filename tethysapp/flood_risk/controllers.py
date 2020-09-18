@@ -28,15 +28,6 @@ def building(request):
     """
     Controller for the Flood Risk Layer Generation Page
     """
-    form_submitted = False
-    geoserver_engine = app.get_spatial_dataset_service(name='main_geoserver', as_engine=True)
-    response = geoserver_engine.list_layers(with_properties=False)
-    if response['success']:
-        for layer in response['result']:
-            if layer == 'flood-risk:Streets_Inundation':
-                form_submitted = True
-
-
     # Define form gizmos
 
     submit_buildings = Button(
@@ -47,45 +38,35 @@ def building(request):
         attributes={'id': 'submit-buildings'},
     )
 
-    map_layers = []
-    if form_submitted:
-        geoserver_layer = MVLayer(
-            source='ImageWMS',
-            options={
-                'url': 'http://localhost:8080/geoserver/wms',
-                'params': {'LAYERS': 'flood-risk:Landuse_Inundation'},
-                'serverType': 'geoserver'
-            },
-            legend_title=""
-        )
-        map_layers.append(geoserver_layer)
+    view_options = MVView(
+        projection='EPSG:4326',
+        center=[-100, 40],
+        zoom=3.5,
+        maxZoom=18,
+        minZoom=2
+    )
+
+    drawing_options = []
+
+    basemaps = ['OpenStreetMap',
+                'CartoDB',
+                'Stamen',
+                'ESRI']
+
+    MapView.old_version = '5.3.0'
 
     map_view = MapView(
-        height='100%',
-        width='100%',
-        layers=map_layers,
-        controls=[
-            'ZoomSlider', 'Rotate', 'FullScreen',
-            {'ZoomToExtent': {
-                'projection': 'EPSG:4326',
-                'extent': [29.25, -4.75, 46.25, 5.2]
-            }}
-        ],
-        basemap=[
-            'CartoDB',
-            {'CartoDB': {'style': 'dark'}},
-            'OpenStreetMap',
-            'Stamen',
-            'ESRI'
-        ],
-        view=MVView(
-            projection='EPSG:4326',
-            center=[37.880859, 0.219726],
-            zoom=7,
-            maxZoom=18,
-            minZoom=2
-        )
+        # height='100%',
+        # width='100%',
+        # controls=['ZoomSlider', 'Rotate', 'FullScreen',
+        #           {'MousePosition': {'projection': 'EPSG:4326'}},
+        #           {'ZoomToExtent': {'projection': 'EPSG:4326', 'extent': [-130, 22, -65, 54]}}],
+        layers=[],
+        view=view_options,
+        basemap=basemaps,
+        draw=drawing_options
     )
+
     context = {
         'submit_buildings': submit_buildings,
         'map_view': map_view,
@@ -161,21 +142,23 @@ def street(request):
 
     drawing_options = []
 
-    basemaps=['OpenStreetMap']
+    basemaps=['OpenStreetMap',
+              'CartoDB',
+              'Stamen',
+              'ESRI']
 
     MapView.old_version = '5.3.0'
 
     map_view = MapView(
-        height='400px',
-        width='600px',
-        controls=['ZoomSlider', 'Rotate', 'FullScreen',
-                  {'MousePosition': {'projection': 'EPSG:4326'}},
-                  {'ZoomToExtent': {'projection': 'EPSG:4326', 'extent': [-130, 22, -65, 54]}}],
+        # height='100%',
+        # width='100%',
+        # controls=['ZoomSlider', 'Rotate', 'FullScreen',
+        #           {'MousePosition': {'projection': 'EPSG:4326'}},
+        #           {'ZoomToExtent': {'projection': 'EPSG:4326', 'extent': [-130, 22, -65, 54]}}],
         layers=[],
         view=view_options,
         basemap=basemaps,
-        draw=drawing_options,
-        legend=False
+        draw=drawing_options
     )
 
     submit_streets = Button(
@@ -198,22 +181,6 @@ def manhole(request):
     """
     Controller for the Manhole page.
     """
-    map_layers = []
-    geoserver_engine = app.get_spatial_dataset_service(name='main_geoserver', as_engine=True)
-    response = geoserver_engine.list_layers(with_properties=False)
-    if response['success']:
-        for layer in response['result']:
-            if layer == 'flood-risk:MH_Street_Inundation':
-                geoserver_layer = MVLayer(
-                    source='ImageWMS',
-                    options={
-                        'url': 'http://localhost:8080/geoserver/wms',
-                        'params': {'LAYERS': 'flood-risk:MH_Street_Inundation'},
-                        'serverType': 'geoserver'
-                    },
-                    legend_title=""
-                )
-                map_layers.append(geoserver_layer)
 
     # Define form gizmos
     submit_manhole = Button(
@@ -231,32 +198,35 @@ def manhole(request):
         classes="input buffer-input",
     )
 
-    map_view = MapView(
-        height='100%',
-        width='100%',
-        layers=map_layers,
-        controls=[
-            'ZoomSlider', 'Rotate', 'FullScreen',
-            {'ZoomToExtent':{
-                'projection':'EPSG:4326',
-                'extent':[29.25, -4.75, 46.25, 5.2]
-            }}
-        ],
-        basemap=[
-            'CartoDB',
-            {'CartoDB': {'style': 'dark'}},
-            'OpenStreetMap',
-            'Stamen',
-            'ESRI'
-        ],
-        view=MVView(
-            projection='EPSG:4326',
-            center=[37.880859, 0.219726],
-            zoom=7,
-            maxZoom=18,
-            minZoom=2
-        )
+    view_options = MVView(
+        projection='EPSG:4326',
+        center=[-100, 40],
+        zoom=3.5,
+        maxZoom=18,
+        minZoom=2
     )
+
+    drawing_options = []
+
+    basemaps = ['OpenStreetMap',
+                'CartoDB',
+                'Stamen',
+                'ESRI']
+
+    MapView.old_version = '5.3.0'
+
+    map_view = MapView(
+        # height='100%',
+        # width='100%',
+        # controls=['ZoomSlider', 'Rotate', 'FullScreen',
+        #           {'MousePosition': {'projection': 'EPSG:4326'}},
+        #           {'ZoomToExtent': {'projection': 'EPSG:4326', 'extent': [-130, 22, -65, 54]}}],
+        layers=[],
+        view=view_options,
+        basemap=basemaps,
+        draw=drawing_options
+    )
+
     context = {
         'manhole_buffer':manhole_buffer,
         'submit_manhole':submit_manhole,

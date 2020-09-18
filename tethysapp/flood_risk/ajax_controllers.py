@@ -49,8 +49,6 @@ def building_process(request):
 
         # Import text entries and field names
         buffer_val = request.POST["buffer"]
-        if buffer_val=="":
-            buffer_val = 1
         buildingid_field = request.POST["buildingid_field"]
         taxid_field = request.POST["taxid_field"]
         tax_field = request.POST["tax_field"]
@@ -138,23 +136,37 @@ def building_process(request):
                                     else:
                                         target_file.loc[idx, 'Residential'] = 0
                                 target_file=target_file.rename(columns={'Land_Use':landuse_field})
-                                return_obj["bounds"] = target_file.total_bounds
+
                                 if not target_file.empty:
                                     mk_change_directory("Landuse_Inundation")
                                     target_file.to_file("Landuse_Inundation.shp")
 
-                                    if not os.stat(find_file("Landuse_Inundation", ".shp")).st_size == 0:
-                                        move_geoserver("Landuse_Inundation")
+                                    # Find bounds of final dataframe
+                                    target_file = target_file.to_crs("EPSG:4326")
+                                    this_bounds = target_file.total_bounds
+                                    x1, y1, x2, y2 = this_bounds[0], this_bounds[1], this_bounds[2], this_bounds[3]
+                                    this_extent = [x1, y1, x2, y2]
+                                    return_obj["extent"] = this_extent
+
+                                    # Convert all coordinates to EPSG:3857 for openlayers vector layer
+                                    target_file = target_file.to_crs("EPSG:3857")
+                                    # Export building flooding geojson in EPSG:3857
+                                    target_file.to_file(filename=("Landuse_Inundation.geojson"), driver='GeoJSON')
+                                    mk_change_directory("Landuse_Inundation")
+                                    building_features = []
+                                    if not os.stat(find_file("Landuse_Inundation", ".geojson")).st_size == 0:
+                                        with fiona.open("Landuse_Inundation.geojson") as data_file:
+                                            for data in data_file:
+                                                building_features.append(data)
+                                            return_obj["building_features"] = building_features  # Return manhole features in geojson format
 
         return JsonResponse(return_obj)
 
 
 
 """
-Ajax controller which imports streets shapefiles to the user workspace
+Ajax controller which finds flood depth over streets
 """
-
-
 def streets_process(request):
     return_obj = {}
 
@@ -162,8 +174,6 @@ def streets_process(request):
         streetid = request.POST["streetid_field"]
 
         buffer_val = request.POST["buffer"]
-        if buffer_val == "":
-            buffer_val = 20
         distance_val = request.POST["distance"]
 
         file_name = "street_file"
@@ -184,6 +194,7 @@ def streets_process(request):
         this_input = this_input.drop(columns=['geometry'])
         this_input.fillna(0, inplace=True)
 
+        # Associate input street shapefile fields with divided streets shapefile
         streets_with_info = this_output.merge(this_input, on=streetid)
 
         # Check if the dataframe is empty and if not export to shapefile
@@ -191,7 +202,9 @@ def streets_process(request):
             mk_change_directory(output_file)
             streets_with_info.to_file(filename=(output_file + ".shp"), overwrite=True)
 
+            # Buffer divided streets shapefile
             add_buffer(streetid, buffer_val, output_file, output_file2, 'Polygon', 'LineString')
+            # Extract max flood depth within each street polygon
             max_int_results = max_intersect(output_file2, "depth_file")
             if not max_int_results['is_dataframe_empty']:
                 raster_stats_dataframe = max_int_results['return_dataframe']
@@ -200,8 +213,13 @@ def streets_process(request):
                 raster_stats_dataframe = raster_stats_dataframe[['Index', 'Max_Depth']]
                 streets_divided = gpd.read_file(find_file("Streets_divided", ".shp"))
                 streets_divided.fillna(0, inplace=True)
+                # Associate flood depth with divided streets shapefile
                 streets_with_depth = streets_divided.merge(raster_stats_dataframe, on='Index')
                 if not streets_with_depth.empty:
+                    # Export street flooding shapefile in original crs
+                    mk_change_directory("Streets_Inundation")
+                    streets_with_depth.to_file(filename=("Streets_Inundation.shp"))
+
                     # Find the map extent in EPSG:4326 to zoom to layer extent
                     proj_st_with_depth = streets_with_depth.to_crs("EPSG:4326")
                     if not proj_st_with_depth.empty:
@@ -210,11 +228,9 @@ def streets_process(request):
                         this_extent = [x1, y1, x2, y2]
                         return_obj["extent"] = this_extent
 
-                    mk_change_directory("Streets_Inundation")
-                    streets_with_depth.to_file(filename=("Streets_Inundation.shp"))
-
                     # Convert all coordinates to EPSG:3857 for openlayers vector layer
                     streets_with_depth = streets_with_depth.to_crs("EPSG:3857")
+                    # Export street flooding geojson in EPSG:3857
                     streets_with_depth.to_file(filename=("Streets_Inundation.geojson"), driver='GeoJSON')
                     mk_change_directory("Streets_Inundation")
                     streets_features = []
@@ -222,7 +238,7 @@ def streets_process(request):
                         with fiona.open("Streets_Inundation.geojson") as data_file:
                             for data in data_file:
                                 streets_features.append(data)
-                            return_obj["streets_features"] = streets_features
+                            return_obj["streets_features"] = streets_features # Return street features in geojson format
 
         return JsonResponse(return_obj)
 
@@ -237,15 +253,15 @@ def manhole_process(request):
 
     if request.is_ajax() and request.method == 'POST':
 
+        # Read in input fields
         street_depth = request.POST["street_depth"]
         f_path = find_file("mhstreet_file", ".shp")
         join_file = gpd.GeoDataFrame.from_file(f_path)
-        print("At the Beginning")
-        print(join_file.columns)
 
         manholeid = request.POST["manholeid_field"]
         buffer_val = 0.5
 
+        # Buffer manholes and extract max depth at manholes
         add_buffer(manholeid, buffer_val, "manhole_file", "Manhole_buffered", 'Polygon', 'Point')
         max_int_results = max_intersect("Manhole_buffered", "depth_file")
         if not max_int_results['is_dataframe_empty']:
@@ -257,36 +273,31 @@ def manhole_process(request):
             if 'Max_Depth' in target_file.columns:
                 target_file=target_file.drop(columns=['Max_Depth'])
 
+            # Add fields from original manhole shapefile to new file
             manholes_with_depth = target_file.merge(raster_stats_dataframe, on=manholeid)
             if not manholes_with_depth.empty:
+                # Export manhole shapefile with depth in original crs
                 mk_change_directory("Manhole_Inundation")
                 manholes_with_depth.to_file(filename="Manhole_Inundation.shp")
 
                 if not os.stat(find_file("Manhole_Inundation", ".shp")).st_size == 0:
                     buffer_val = request.POST["buffer"]
-                    if buffer_val == "":
-                        buffer_val = 20
                     add_buffer(manholeid, buffer_val, "manhole_file", "Manhole_radius", 'Polygon', 'Point')
 
                     mh_inun = find_file("Manhole_Inundation", ".shp")
                     mh_inun = gpd.GeoDataFrame.from_file(mh_inun)
 
-                    street_depth = request.POST["street_depth"]
-                    f_path = find_file("mhstreet_file", ".shp")
-                    join_file = gpd.GeoDataFrame.from_file(f_path)
-                    print("Before Rename")
-                    print(join_file.columns)
-                    print(str(street_depth))
                     join_file = join_file.rename(columns={str(street_depth): 'St_Depth'})
-                    print(join_file.columns)
                     if manholeid in join_file.columns:
-                        join_file = join_file.drop(columns=[manholeid, 'Shape_Leng', 'Shape_Area'])
+                        print(join_file.columns)
+                        join_file = join_file.drop(columns=[manholeid])
 
                     shapefile = find_file("Manhole_radius", ".shp")
                     target_file = gpd.GeoDataFrame.from_file(shapefile)
 
-                    # Spatially join street inundation and tax parcels
+                    # Spatially join street inundation and manhole inundation files
                     manholes_with_streets = sjoin(join_file, target_file, how='right', op='intersects')
+                    print(manholes_with_streets.columns)
 
                     # Group by objectid to take the max street depth for each manhole objectid
                     agg_manhole_street_depth = manholes_with_streets.groupby(str(manholeid)).agg(
@@ -296,6 +307,7 @@ def manhole_process(request):
                     mh_inun = mh_inun.merge(agg_manhole_street_depth, on=str(manholeid))
                     mh_inun = mh_inun.rename(columns={'Max_Depth': 'MH_Depth'})
 
+                    # Determine control at each manhole
                     for idx, row in mh_inun.iterrows():
                         if mh_inun.loc[idx, 'MH_Depth'] == 0 and mh_inun.loc[idx, 'St_Depth'] == 0:
                             mh_inun.loc[idx, 'Control'] = "Not in ROW"
@@ -309,42 +321,28 @@ def manhole_process(request):
                             mh_inun.loc[idx, 'Control'] = "Not in ROW"
 
                     if not mh_inun.empty:
-                        inProj = Proj(init=mh_inun.crs)
-                        outProj = Proj(init='epsg:4326')
-                        this_extent = (mh_inun.total_bounds).tolist()
-                        x1, y1 = this_extent[0], this_extent[1]
-                        x1, y1 = transform(inProj, outProj, x1, y1)
-                        x2, y2 = this_extent[2], this_extent[3]
-                        x2, y2 = transform(inProj, outProj, x2, y2)
-                        this_extent = [x1, y1, x2, y2]
-
-                        this_centroid = centroid(this_extent)
-
-                        return_obj["centroid"] = this_centroid
-                        return_obj["extent"] = this_extent
+                        # Export shapefile with street depth, manhole depth, and control in input file crs
                         mk_change_directory("MH_Street_Inundation")
                         mh_inun.to_file("MH_Street_Inundation.shp")
 
-                    if not os.stat(find_file("MH_Street_Inundation", ".shp")).st_size == 0:
-                        move_geoserver("MH_Street_Inundation")
-                        return_obj["geoserver_layer"] = False
+                        # Find bounds of final dataframe
+                        mh_inun = mh_inun.to_crs("EPSG:4326")
+                        this_bounds = mh_inun.total_bounds
+                        x1, y1, x2, y2 = this_bounds[0], this_bounds[1], this_bounds[2], this_bounds[3]
+                        this_extent = [x1, y1, x2, y2]
+                        return_obj["extent"] = this_extent
 
-                        geoserver_engine = app.get_spatial_dataset_service(name='main_geoserver', as_engine=True)
-                        response = geoserver_engine.list_layers(with_properties=False)
-                        if response['success']:
-                            for layer in response['result']:
-                                if layer == 'flood-risk:MH_Street_Inundation':
-                                    geoserver_layer=[]
-                                    """geoserver_layer = MVLayer(
-                                        source='ImageWMS',
-                                        options={
-                                            'url': 'http://localhost:8080/geoserver/wms',
-                                            'params': {'LAYERS': 'flood-risk:MH_Street_Inundation'},
-                                            'serverType': 'geoserver'
-                                        },
-                                        legend_title=""
-                                    )"""
-                                    return_obj["geoserver_layer"] = True
+                        # Convert all coordinates to EPSG:3857 for openlayers vector layer
+                        mh_inun = mh_inun.to_crs("EPSG:3857")
+                        # Export manhole flooding geojson in EPSG:3857
+                        mh_inun.to_file(filename=("MH_Street_Inundation.geojson"), driver='GeoJSON')
+                        mk_change_directory("MH_Street_Inundation")
+                        mh_features = []
+                        if not os.stat(find_file("MH_Street_Inundation", ".geojson")).st_size == 0:
+                            with fiona.open("MH_Street_Inundation.geojson") as data_file:
+                                for data in data_file:
+                                    mh_features.append(data)
+                                return_obj["mh_features"] = mh_features  # Return manhole features in geojson format
 
         return JsonResponse(return_obj)
 
@@ -352,13 +350,12 @@ def manhole_process(request):
 """
 Ajax controller which determines if pipes are undersized
 """
-
-
 def pipe_process(request):
     return_obj = {}
 
     if request.is_ajax() and request.method == 'POST':
 
+        # Read in input values
         pipeid = request.POST["pipeid_field"]
         flow = request.POST["flow"]
         diameter = request.POST["diameter"]
@@ -386,6 +383,7 @@ def pipe_process(request):
         this_input = this_input.drop(columns=['geometry'])
         this_input.fillna(0, inplace=True)
 
+        # Add fields from input file to divided streets file
         streets_with_info = this_output.merge(this_input, on=streetid)
 
         # Check if the dataframe is empty and if not export to shapefile
@@ -394,6 +392,7 @@ def pipe_process(request):
             streets_with_info.to_file(filename=(split_street_file + ".shp"), overwrite=True)
             street_rad = request.POST["street_rad"]
 
+            # If the street radio button is yes extract the depth from the raster and associate with divided streets
             if street_rad == "no":
                 street_flow = request.POST["street_flow"]
             else:
@@ -416,6 +415,7 @@ def pipe_process(request):
                         mk_change_directory(split_street_file)
                         street_with_flow.to_file(filename=split_street_file+".shp")
 
+            # Buffer pipes shapefile
             if not os.stat(find_file(split_street_file, ".shp")).st_size == 0:
                 add_buffer(pipeid, buffer, pipe_file, pipe_buffered_file, 'Polygon', 'LineString')
 
@@ -441,6 +441,7 @@ def pipe_process(request):
 
                 agg_streets_and_pipes = streets_and_pipes.dissolve(by='PIPEID', aggfunc='max')
 
+                # Calculate the pipe diameter necessary to meet flood flows
                 for i, j in agg_streets_and_pipes.iterrows():
                     this_diameter = float(agg_streets_and_pipes.loc[i, diameter])
                     this_slope = float(agg_streets_and_pipes.loc[i, slope])
@@ -482,7 +483,25 @@ def pipe_process(request):
                     if not agg_streets_and_pipes.empty:
                         mk_change_directory("Pipe_Inundation")
                         agg_streets_and_pipes.to_file(filename=("Pipe_Inundation.shp"), overwrite=True)
-                        if not os.stat(find_file("Pipe_Inundation", ".shp")).st_size == 0:
-                            move_geoserver("Pipe_Inundation")
+
+                        # Find the map extent in EPSG:4326 to zoom to layer extent
+                        proj_st_with_pipes = agg_streets_and_pipes.to_crs("EPSG:4326")
+                        if not proj_st_with_pipes.empty:
+                            this_bounds = proj_st_with_pipes.total_bounds
+                            x1, y1, x2, y2 = this_bounds[0], this_bounds[1], this_bounds[2], this_bounds[3]
+                            this_extent = [x1, y1, x2, y2]
+                            return_obj["extent"] = this_extent
+
+                        # Convert all coordinates to EPSG:3857 for openlayers vector layer
+                        proj_st_with_pipes = proj_st_with_pipes.to_crs("EPSG:3857")
+                        # Export street flooding geojson in EPSG:3857
+                        proj_st_with_pipes.to_file(filename=("Pipe_Inundation.geojson"), driver='GeoJSON')
+                        mk_change_directory("Pipe_Inundation")
+                        pipes_features = []
+                        if not os.stat(find_file("Pipe_Inundation", ".geojson")).st_size == 0:
+                            with fiona.open("Pipe_Inundation.geojson") as data_file:
+                                for data in data_file:
+                                    pipes_features.append(data)
+                                return_obj["pipes_features"] = pipes_features  # Return pipe features in geojson format
 
         return JsonResponse(return_obj)

@@ -1,11 +1,14 @@
-var building_risk;
-var line_file;
-var buffer;
-var buildingid_field;
-var tax_field;
-var taxid_field;
-var distance;
+/*
+Declaring global variables
+*/
+var buffer; //Buffer around building outlines to extract depth
+var buildingid_field; //Building ID Field
+var tax_field; //Parcel value field
+var taxid_field; //Parcel ID field
 
+/*
+Function to upload input files without fields to the user workspace
+*/
 function uploadFileNoFields(file_upload_id, file_name){
     var shapefiles = $(file_upload_id)[0].files;
 
@@ -19,6 +22,10 @@ function uploadFileNoFields(file_upload_id, file_name){
     file_upload_process_no_fields(file_upload_id, data);
 };
 
+/*
+Helper function
+Passes files without fields to the ajax to be uploaded to the user workspace
+*/
 function file_upload_process_no_fields(file_upload_id, data){
     var file_upload = ajax_update_database_with_file("file-upload-move-files", data); //Submitting the data through the ajax function, see main.js for the helper function.
     file_upload.done(function(return_data){
@@ -30,6 +37,9 @@ function file_upload_process_no_fields(file_upload_id, data){
     });
 };
 
+/*
+Function to upload input files with fields to the user workspace
+*/
 function uploadFile(file_upload_id, file_name, filetype, number_fields){
 
     var shapefiles = $(file_upload_id)[0].files;
@@ -51,6 +61,10 @@ function uploadFile(file_upload_id, file_name, filetype, number_fields){
     file_upload_process(data, field_list);
 };
 
+/*
+Helper function
+Passes files with fields to the ajax to be uploaded to the user workspace
+*/
 function file_upload_process(data, field_list){
     var file_upload = ajax_update_database_with_file("file-upload", data); //Submitting the data through the ajax function, see main.js for the helper function.
     file_upload.done(function(return_data){ //Reset the form once the data is added succesfully
@@ -75,8 +89,14 @@ function file_upload_process(data, field_list){
     });
 };
 
+/*
+Function which extracts flood depths over buildings
+and calculates the building value lost and prioritizes
+flooding by residential landuse */
 process_buildings = function(){
     var data = new FormData();
+
+    //Read in input fields
 
     buffer = document.getElementById("buffer-input").value;
     data.append("buffer", buffer);
@@ -96,6 +116,7 @@ process_buildings = function(){
     landuse_field = document.getElementById("landuse-field-select-1").value;
     data.append("landuse_field", landuse_field);
 
+    //Find errors in input values
     sum_check = (check(buffer, "buffer-input-error")
                 +check(buildingid_field, "bldg-field-select-0-error")
                 +check(taxid_field, "tax-field-select-0-error")
@@ -105,30 +126,93 @@ process_buildings = function(){
 
     if(sum_check==0){
         var bldg_risk = ajax_update_database_with_file("building-process-ajax",data); //Submitting the data through the ajax function, see main.js for the helper function.
+        bldg_risk.done(function(return_data){
+
+            ol_map = TETHYS_MAP_VIEW.getMap();
+            document.getElementById("building_map").classList.remove("hideDiv"); // Show the map
+            ol_map.setSize(previous_size); // Resize the map to fit the div
+            ol_map.renderSync(); // Update the map
+            (document.getElementsByClassName("collapsible"))[0].click(); // Collapse input menu div
+
+            // Style building layer
+            var styles = [
+                new ol.style.Style({
+                    stroke: new ol.style.Stroke({
+                        color: '#A9A9A9',
+                        width: 6,
+                        zIndex: 0
+                    })
+                }),
+                new ol.style.Style({
+                    stroke: new ol.style.Stroke({
+                        color: '#FFD300',
+                        width: 5,
+                        zIndex: 1
+                    })
+                })
+            ];
+
+            // Create a geojson object holding building features
+            var geojson_object = {
+                'type': 'FeatureCollection',
+                'crs': {
+                    'type': 'name',
+                    'properties': {
+                        'name': 'EPSG:3857'
+                    }
+                },
+                'features': return_data.building_features
+            };
+
+            // Convert from geojson to openlayers collection
+            var these_features = new ol.format.GeoJSON().readFeatures(geojson_object);
+
+            // Create a new ol source and assign building features
+            var vectorSource = new ol.source.Vector({
+                features: these_features
+            });
+
+            // Create a new modifiable layer and assign source and style
+            var buildingLayer = new ol.layer.Vector({
+                name: 'Buildings',
+                source: vectorSource,
+                style: styles,
+            });
+
+            // Add streets layer to map
+            ol_map = TETHYS_MAP_VIEW.getMap();
+            ol_map.addLayer(buildingLayer);
+            ol_map = TETHYS_MAP_VIEW.getMap();
+
+            // Define a new legend
+            var legend = new ol.control.Legend({
+                title: 'Legend',
+                margin: 5,
+                collapsed: false
+            });
+            ol_map.addControl(legend);
+            legend.addRow({
+                title: 'Buildings',
+                typeGeom:'Point',
+                style: new ol.style.Style({
+                    image: new ol.style.RegularShape({
+                        points: 4,
+                        radius: 10,
+                        angle: Math.PI / 4,
+                        stroke: new ol.style.Stroke({ color: '#A9A9A9', width: 2 }),
+                        fill: new ol.style.Fill({ color: '#FFD300'})
+                    })
+                })
+            });
+            TETHYS_MAP_VIEW.zoomToExtent(return_data.extent) // Zoom to layer
+        });
     }
 };
 
-$(function(data) { //wait for the page to load
-    console.log("PAGE LOADED")
-    ol_map = TETHYS_MAP_VIEW.getMap();
-    console.log(ol_map)
-});
 
-$(function(data){
-    var coll = document.getElementsByClassName("collapsible");
-    coll[0].addEventListener("click", function(){
-        this.classList.toggle("active")
-        var this_content = document.getElementById('building-menu')
-        if(this_content.style.display === "block") {
-            this_content.style.display = "none";
-            coll[0].innerHTML = "+Show Inputs"
-        } else {
-            this_content.style.display = "block";
-            coll[0].innerHTML = "-Hide Inputs"
-        }
-    });
-});
-
+/*
+Function to check input fields for errors and return 1 if errors are found
+*/
 function check(value, error_id){
     if(value.trim()==""){
         document.getElementById(error_id).innerHTML = "Field is not defined"
@@ -142,7 +226,35 @@ function check(value, error_id){
         document.getElementById(error_id).innerHTML = ""
         return 0;
     }
-}
+};
+
+/*
+Function to hide input menu div when button is clicked
+*/
+$(function(data){
+    var coll = document.getElementsByClassName("collapsible");
+    coll[0].addEventListener("click", function(){
+        console.log(coll[0].innerHTML)
+        if(coll[0].innerHTML == '<i class="fa fa-toggle-up"></i>'){
+            coll[0].innerHTML = '<i class="fa fa-toggle-down"></i>';
+            document.getElementById('building-menu').classList.add("hideDiv");
+        }
+        else{
+            coll[0].innerHTML = '<i class="fa fa-toggle-up"></i>';
+            document.getElementById('building-menu').classList.remove("hideDiv");
+        }
+    });
+});
+
+/*
+Function to retrieve map, retrieve map size, and hide map on page load
+*/
+$(function(data) { //wait for the page to load
+    console.log("PAGE LOADED")
+    ol_map = TETHYS_MAP_VIEW.getMap();
+    previous_size = ol_map.getSize(); // Retrieve map size
+    document.getElementById("building_map").classList.add("hideDiv"); // Hide ol map
+});
 
 $("#submit-buildings").click(process_buildings);
 

@@ -37,57 +37,48 @@
 
 
 {% block app_content %}
-    <div class="row" style="display:block;" id="manhole-menu">
-        <div class="col-12 menu">
-            <form action="" method="post" enctype="multipart/form-data">
-                {% csrf_token %}
+    <div class="input-menu" id="manhole-menu">
+        <form action="" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="form-group manhole_upload">
+                <label class ="control-label" for="mhstreet-shp-upload-input">Street Shapefile</label>
+                <input id ="mhstreet-shp-upload-input" class = "shp-upload-input" name="mhstreet-shp-upload-input" style="display:inline-block;" type="file" accept = ".shp, .shx, .prj, .dbf, .cpg, .sbn, .sbx, .xml" multiple>
                 <br>
-                <div class="form-group manhole_upload">
-                    <label class ="control-label" for="mhstreet-shp-upload-input">Street Shapefile</label>
-                    <input id ="mhstreet-shp-upload-input" class = "shp-upload-input" name="mhstreet-shp-upload-input" style="display:inline-block;" type="file" accept = ".shp, .shx, .prj, .dbf, .cpg, .sbn, .sbx, .xml" multiple>
-                    <br>
-                    <div id="mhstreet-select" style="display:inline-block;">
-                    <label for="mhstreet-field-select-0" style="padding-right:5px;">Street Depth Field:</label>
-                        <select id="mhstreet-field-select-0">
-                            <option value="">Select Field</option>
-                        </select>
-                    </div>
-                    <text id="mhstreet-field-select-0-error"> </text>
-                    <br>
-                    <label class ="control-label" for="manhole-shp-upload-input">Manhole Shapefile</label>
-                    <input id ="manhole-shp-upload-input" class = "shp-upload-input" name="manhole-shp-upload-input" style="display:inline-block;" type="file" accept = ".shp, .shx, .prj, .dbf, .cpg, .sbn, .sbx, .xml" multiple>
-                    <br>
-                    <div id="manholeid-select" style="display:inline-block;">
-                    <label for="manhole-field-select-0" style="padding-right:5px;">Manhole ID Field:</label>
-                        <select id="manhole-field-select-0">
-                            <option value="">Select Field</option>
-                        </select>
-                    </div>
-                    <text id="manhole-field-select-0-error"> </text>
-                    <br>
-                    <label class ="control-label" id ="label-manhole-buffer" for="manhole-buffer">Manhole Buffer: </label><input type="text" id="manhole-buffer" name="manhole_buffer" placeholder="50.0" required>
-                    <a data-toggle="modal" data-target="#manhole-buffer-modal"><span class="glyphicon glyphicon-info-sign"></span></a>
-                    <text id="manhole-buffer-error"> </text>
-                    <br>
-                    <label class ="control-label" for="depth-shp-upload-input">Inundation Raster</label>
-                    <input id ="depth-shp-upload-input" class="shp-upload-input" name="depth-shp-upload-input" style="display:inline-block;" type="file" accept = ".tif, .tfw, .xml, .ovr" multiple>
+                <div id="mhstreet-select" style="display:inline-block;">
+                <label for="mhstreet-field-select-0" style="padding-right:5px;">Street Depth Field:</label>
+                    <select id="mhstreet-field-select-0">
+                        <option value="">Select Field</option>
+                    </select>
                 </div>
-                {% gizmo button submit_manhole %}
-            </form>
-        </div>
-    </div>
-    <button type = "button" class = "collapsible">- Hide Inputs</button>
-
-    <div class="row">
-        <div class="col-12">
-            <div class="main" id="manhole-map-view">
-                {% gizmo map_view %}
+                <text id="mhstreet-field-select-0-error"> </text>
+                <br>
+                <label class ="control-label" for="manhole-shp-upload-input">Manhole Shapefile</label>
+                <input id ="manhole-shp-upload-input" class = "shp-upload-input" name="manhole-shp-upload-input" style="display:inline-block;" type="file" accept = ".shp, .shx, .prj, .dbf, .cpg, .sbn, .sbx, .xml" multiple>
+                <br>
+                <div id="manholeid-select" style="display:inline-block;">
+                <label for="manhole-field-select-0" style="padding-right:5px;">Manhole ID Field:</label>
+                    <select id="manhole-field-select-0">
+                        <option value="">Select Field</option>
+                    </select>
+                </div>
+                <text id="manhole-field-select-0-error"> </text>
+                <br>
+                <label class ="control-label" id ="label-manhole-buffer" for="manhole-buffer">Manhole Buffer: </label><input type="number" step="1.0" min="0.5" id="manhole-buffer" name="manhole_buffer" placeholder="50.0" required>
+                <a data-toggle="modal" data-target="#manhole-buffer-modal"><span class="glyphicon glyphicon-info-sign"></span></a>
+                <text id="manhole-buffer-error"> </text>
+                <br>
+                <label class ="control-label" for="depth-shp-upload-input">Inundation Raster</label>
+                <input id ="depth-shp-upload-input" class="shp-upload-input" name="depth-shp-upload-input" style="display:inline-block;" type="file" accept = ".tif, .tfw, .xml, .ovr" multiple>
             </div>
-        </div>
+            {% gizmo button submit_manhole %}
+        </form>
     </div>
+    <button type = "button" class = "btn collapsible"><i class="fa fa-toggle-up"></i></button>
+    <br>
 
-    <input type="hidden" id="manhole-hidden-extent">
-    <input type="hidden" id="manhole-hidden-centroid">
+    <div class="map" id="manhole_map">
+        {% gizmo map_view %}
+    </div>
 
 {% endblock %}
 
@@ -101,9 +92,12 @@
         </div>
         <div class="modal-body">
             <p><b>This calculates the flood depth at each manhole based on the inundation raster from the streets page. Then, each manhole is determined to be either storm sewer (not enough pipe capacity) or inlet (too few storm drains) controlled. The result is a MH_Street_Inundation shapefile with a manhole depth (MH_Depth), street depth (Street_Depth), and Control (Control) field.</b></p>
+            <p>Street Shapefile: Line shapefile showing locations of street segments with associated flood depths (accepts .shp, .shx, .prj, .dbf, .cpg, .sbn, .sbx, and .xml file types).</p>
+            <p>Street Depth Field: The name of the field with flood depths for each street segment.</p>
             <p>Manhole Shapefile: Point shapefile showing locations of manholes (accepts .shp, .shx, .prj, .dbf, .cpg, .sbn, .sbx, and .xml file types).</p>
             <p>Manhole ID Field: The name of the field with unique IDs for each manhole.</p>
             <p>Manhole Buffer: The radius around each manhole to search for a nearby street, in the same units as raster file. It is recommended that this value be greater than 30 ft.</p>
+            <p>Inundation Raster: Flood depth raster (accepts .tif, .tfw, .xml, and .ovr file types).</p>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
@@ -135,10 +129,16 @@
     {{ block.super }}
     <link href="{% static 'flood_risk/css/main.css' %}" rel="stylesheet"/>
     <link rel="stylesheet" href="{% static 'flood_risk/css/map.css' %}" />
+    <link rel="stylesheet" href="https://cdn.rawgit.com/Viglino/ol-ext/master/dist/ol-ext.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://openlayers.org/en/latest/css/ol.css" />
 {% endblock %}
 
 {% block scripts %}
     {{ block.super }}
     <script src="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v5.3.0/build/ol.js"></script>
     <script src="{% static 'flood_risk/js/manhole.js' %}" type="text/javascript"></script>
+    <script type="text/javascript" src="https://cdn.rawgit.com/Viglino/ol-ext/master/dist/extra/FontAwesomeDef.js"></script>
+    <script src="https://cdn.polyfill.io/v2/polyfill.min.js?features=requestAnimationFrame,Element.prototype.classList,URL,Object.assign"></script>
+    <script type="text/javascript" src="https://cdn.rawgit.com/Viglino/ol-ext/master/dist/ol-ext.min.js"></script>
 {% endblock %}
