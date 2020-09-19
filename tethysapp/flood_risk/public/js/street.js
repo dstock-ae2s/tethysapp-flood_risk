@@ -123,7 +123,7 @@ process_streets = function(data) {
             (document.getElementsByClassName("collapsible"))[0].click(); // Collapse input menu div
 
             // Style streets layer
-            var styles = [
+            var none_style = [
                 new ol.style.Style({
                     stroke: new ol.style.Stroke({
                         color: '#A9A9A9',
@@ -133,7 +133,39 @@ process_streets = function(data) {
                 }),
                 new ol.style.Style({
                     stroke: new ol.style.Stroke({
-                        color: '#FFD300',
+                        color: 'red',
+                        width: 5,
+                        zIndex: 1
+                    })
+                })
+            ];
+            var low_style = [
+                new ol.style.Style({
+                    stroke: new ol.style.Stroke({
+                        color: '#A9A9A9',
+                        width: 6,
+                        zIndex: 0
+                    })
+                }),
+                new ol.style.Style({
+                    stroke: new ol.style.Stroke({
+                        color: 'yellow',
+                        width: 5,
+                        zIndex: 1
+                    })
+                })
+            ];
+            var high_style = [
+                new ol.style.Style({
+                    stroke: new ol.style.Stroke({
+                        color: '#A9A9A9',
+                        width: 6,
+                        zIndex: 0
+                    })
+                }),
+                new ol.style.Style({
+                    stroke: new ol.style.Stroke({
+                        color: 'green',
                         width: 5,
                         zIndex: 1
                     })
@@ -155,21 +187,53 @@ process_streets = function(data) {
             // Convert from geojson to openlayers collection
             var these_features = new ol.format.GeoJSON().readFeatures(geojson_object);
 
+            // Divide geojson feature collection by Max_Depth
+            var none_features = []
+            var low_features = []
+            var high_features = []
+            these_features.forEach(function(feature){
+                if (feature.get('Max_Depth')>1.0){
+                    high_features.push(feature);
+                } else if (feature.get('Max_Depth')>0.5){
+                    low_features.push(feature);
+                } else {
+                    none_features.push(feature);
+                }
+            });
+
             // Create a new ol source and assign street features
-            var vectorSource = new ol.source.Vector({
-                features: these_features
+            var none_vectorSource = new ol.source.Vector({
+                features: none_features
+            });
+            var low_vectorSource = new ol.source.Vector({
+                features: low_features
+            });
+            var high_vectorSource = new ol.source.Vector({
+                features: high_features
             });
 
             // Create a new modifiable layer and assign source and style
-            var streetLayer = new ol.layer.Vector({
-                name: 'Streets',
-                source: vectorSource,
-                style: styles,
+            var none_streetLayer = new ol.layer.Vector({
+                name: 'No Risk',
+                source: none_vectorSource,
+                style: none_style,
+            });
+            var low_streetLayer = new ol.layer.Vector({
+                name: 'Low Risk',
+                source: low_vectorSource,
+                style: low_style,
+            });
+            var high_streetLayer = new ol.layer.Vector({
+                name: 'High Risk',
+                source: high_vectorSource,
+                style: high_style,
             });
 
             // Add streets layer to map
             ol_map = TETHYS_MAP_VIEW.getMap();
-            ol_map.addLayer(streetLayer);
+            ol_map.addLayer(none_streetLayer);
+            ol_map.addLayer(low_streetLayer);
+            ol_map.addLayer(high_streetLayer);
             ol_map = TETHYS_MAP_VIEW.getMap();
 
             // Define a new legend
@@ -180,7 +244,7 @@ process_streets = function(data) {
             });
             ol_map.addControl(legend);
             legend.addRow({
-                title: 'Streets',
+                title: 'No Risk',
                 typeGeom:'Point',
                 style: new ol.style.Style({
                     image: new ol.style.RegularShape({
@@ -188,7 +252,33 @@ process_streets = function(data) {
                         radius: 10,
                         angle: Math.PI / 4,
                         stroke: new ol.style.Stroke({ color: '#A9A9A9', width: 2 }),
-                        fill: new ol.style.Fill({ color: '#FFD300'})
+                        fill: new ol.style.Fill({ color: 'green'})
+                    })
+                })
+            });
+            legend.addRow({
+                title: 'Low Risk',
+                typeGeom:'Point',
+                style: new ol.style.Style({
+                    image: new ol.style.RegularShape({
+                        points: 4,
+                        radius: 10,
+                        angle: Math.PI / 4,
+                        stroke: new ol.style.Stroke({ color: '#A9A9A9', width: 2 }),
+                        fill: new ol.style.Fill({ color: 'yellow'})
+                    })
+                })
+            });
+            legend.addRow({
+                title: 'High Risk',
+                typeGeom:'Point',
+                style: new ol.style.Style({
+                    image: new ol.style.RegularShape({
+                        points: 4,
+                        radius: 10,
+                        angle: Math.PI / 4,
+                        stroke: new ol.style.Stroke({ color: '#A9A9A9', width: 2 }),
+                        fill: new ol.style.Fill({ color: 'red'})
                     })
                 })
             });
