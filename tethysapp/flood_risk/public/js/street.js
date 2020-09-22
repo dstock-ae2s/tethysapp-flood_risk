@@ -133,7 +133,7 @@ process_streets = function(data) {
                 }),
                 new ol.style.Style({
                     stroke: new ol.style.Stroke({
-                        color: 'red',
+                        color: 'green',
                         width: 5,
                         zIndex: 1
                     })
@@ -165,7 +165,7 @@ process_streets = function(data) {
                 }),
                 new ol.style.Style({
                     stroke: new ol.style.Stroke({
-                        color: 'green',
+                        color: 'red',
                         width: 5,
                         zIndex: 1
                     })
@@ -236,6 +236,25 @@ process_streets = function(data) {
             ol_map.addLayer(high_streetLayer);
             ol_map = TETHYS_MAP_VIEW.getMap();
 
+            // Print Control
+            var printControl = new ol.control.Print();
+            ol_map.addControl(printControl);
+            // On print save image file
+            printControl.on('printing', function(e){
+                $('body').css('opacity',  0.5);
+            });
+            printControl.on(['print', 'error'], function(e){
+                $('body').css('opacity',  1);
+                // Print success
+                if(e.image){
+                    e.canvas.toBlob(function(blob){
+                        saveAs(blob, 'map.'+e.imageType.replace('image/', ''));
+                    }, e.imageType);
+                } else {
+                    console.warn('No canvas to export');
+                }
+            });
+
             // Define a new legend
             var legend = new ol.control.Legend({
                 title: 'Legend',
@@ -282,6 +301,94 @@ process_streets = function(data) {
                     })
                 })
             });
+
+//            var scaleLineControl = new ol.control.CanvasScaleLine();
+//            ol_map.addControl(scaleLineControl);
+
+            // Add selection interaction
+            select = new ol.interaction.Select();
+            ol_map.addInteraction(select);
+
+            // Add a popup overlay to the map
+            var element = document.getElementById('popup');
+            var popup = new ol.Overlay({
+                element: element,
+                positioning: 'bottom-center',
+                stopEvent: false,
+                offset:[0,-10],
+            });
+            ol_map.addOverlay(popup);
+            ol_map.on('click', function(event){
+                try{
+                    var feature = ol_map.getFeaturesAtPixel(event.pixel)[0];
+                } catch(err){}
+                if(feature){
+                    var coordinate = feature.getGeometry().getCoordinates();
+                    popup.setPosition(coordinate);
+                    popupContent = '<div class="street-popup">'+
+                    '<p>Street Name: '+feature.get(streetid_field)+'</p>'+
+                    '<p>Street Depth: '+feature.get('Max_Depth')+'</p>'
+                    + '</div>';
+                    $(element).popover({
+                        container: element.parentElement,
+                        html: true,
+                        sanitize: false,
+                        content: popupContent,
+                        placement: 'top'
+                    });
+                    $(element).popover('show');
+                } else {
+                    $(element).popover('destroy');
+                }
+            })
+//
+//            //When selected, call function to display properties
+//            var selectedFeatures = select.getFeatures();
+//            selectedFeatures.on('change:length', function(e){
+//
+//                var popup_element = popup.getElement();
+//
+//                if (e.target.getArray().length > 0){
+//                    var selected_feature = e.target.item(0);
+//                    var coordinates = selected_feature.getGeometry().getCoordinates();
+//                    var popup_content = '<div class="street-popup">'+
+//                    '<h5>Street Name:</h5><span>'+selected_feature.get(streetid_field)+'</span>'+
+//                    '<h5>Street Depth:</h5><span>'+selected_feature.get('Max_Depth')+'</span>'
+//                    + '</div>';
+////                    var coordinates = selectedFeatures.getArray().map(function(feature){
+////                        return feature.getGeometry().getCoordinates();
+////                    });
+////                    var depth = selectedFeatures.getArray().map(function(feature){
+////                        return feature.get('Max_Depth');
+////                    });
+////                    if(depth.length >0){
+////                        popup_content += '<h6>Max Depth: </h6>' + '<span>' + depth.join(', ') +'</span>';
+////                    }
+////                    var streetid = selectedFeatures.getArray().map(function(feature){
+////                        return feature.get(streetid_field);
+////                    });
+////                    if(depth.length >0){
+////                        popup_content += '<h6> Street ID: </h6>' + '<span>' + streetid.join(', ') + '</span>';
+////                    }
+////                    popup_content += '</div>';
+//                    //Clean up last popup and reinitialize
+//                    $(popup_element).popover('destroy');
+//                    setTimeout(function(){
+//                        popup.setPosition(coordinates);
+//                        $(popup_element).popover({
+//                            'placement': 'top',
+//                            'animation': true,
+//                            'html': true,
+//                            'content': popup_content
+//                        });
+//
+//                        $(popup_element).popover('show');
+//                    })
+//                } else {
+//                    // remove pop up when selecting nothing on the map
+//                    $(popup_element).popover('destroy');
+//                }
+//            });
             TETHYS_MAP_VIEW.zoomToExtent(return_data.extent) // Zoom to layer
         });
     };

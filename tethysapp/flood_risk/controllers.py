@@ -142,10 +142,10 @@ def street(request):
 
     drawing_options = []
 
-    basemaps=['OpenStreetMap',
-              'CartoDB',
-              'Stamen',
-              'ESRI']
+    # basemaps=['OpenStreetMap',
+    #           'CartoDB',
+    #           'Stamen',
+    #           'ESRI']
 
     MapView.old_version = '5.3.0'
 
@@ -157,7 +157,7 @@ def street(request):
         #           {'ZoomToExtent': {'projection': 'EPSG:4326', 'extent': [-130, 22, -65, 54]}}],
         layers=[],
         view=view_options,
-        basemap=basemaps,
+        basemap=None,
         draw=drawing_options
     )
 

@@ -242,6 +242,11 @@ input.invalid {
     text-align: right;
 }
 
+.ol-attribution {
+    font: 12.5px sans-serif;
+    bottom: 1em;
+}
+
 /* Make circles that indicate the steps of the form: */
 .step {
   height: 15px;
