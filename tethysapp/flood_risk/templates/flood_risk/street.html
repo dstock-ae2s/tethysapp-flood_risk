@@ -70,7 +70,7 @@
         </form>
     </div>
     <button type = "button" class = "btn collapsible"><i class="fa fa-toggle-up"></i></button>
-    <br>
+    <button class="btn hideDiv downloadBtn" id="download_button" onclick="downloadFile()"><i class="fa fa-download"></i></button>
 
     <div class="map" id="street_map">
         {% gizmo map_view %}
@@ -80,6 +80,21 @@
 {% endblock %}
 
 {% block after_app_content %}
+  <div class="modal fade" id="popup-modal" tabindex="-1" role="dialog" aria-labelledby="help-modal-label">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        </div>
+        <div class="modal-body">
+            <div id="myPopup"></div>
+        </div>
+        <div class="modal-footer">
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="modal fade" id="street-modal" tabindex="-1" role="dialog" aria-labelledby="help-modal-label">
     <div class="modal-dialog" role="document">
       <div class="modal-content">

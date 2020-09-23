@@ -115,6 +115,10 @@ process_streets = function(data) {
     if(sum_check == 0){
         var street_risk = ajax_update_database_with_file("streets-process-ajax",data); //Submitting the data through the ajax function, see main.js for the helper function.
         street_risk.done(function(return_data){
+            //Show download files button
+            document.getElementById("download_button").classList.remove("hideDiv");
+
+            //Show and update map
 
             ol_map = TETHYS_MAP_VIEW.getMap();
             document.getElementById("street_map").classList.remove("hideDiv"); // Show the map
@@ -263,7 +267,7 @@ process_streets = function(data) {
             });
             ol_map.addControl(legend);
             legend.addRow({
-                title: 'No Risk',
+                title: 'Depth < 0.5',
                 typeGeom:'Point',
                 style: new ol.style.Style({
                     image: new ol.style.RegularShape({
@@ -276,7 +280,7 @@ process_streets = function(data) {
                 })
             });
             legend.addRow({
-                title: 'Low Risk',
+                title: '0.5 < Depth < 1.0',
                 typeGeom:'Point',
                 style: new ol.style.Style({
                     image: new ol.style.RegularShape({
@@ -289,7 +293,7 @@ process_streets = function(data) {
                 })
             });
             legend.addRow({
-                title: 'High Risk',
+                title: 'Depth > 1.0',
                 typeGeom:'Point',
                 style: new ol.style.Style({
                     image: new ol.style.RegularShape({
@@ -341,58 +345,24 @@ process_streets = function(data) {
                     $(element).popover('destroy');
                 }
             })
-//
-//            //When selected, call function to display properties
-//            var selectedFeatures = select.getFeatures();
-//            selectedFeatures.on('change:length', function(e){
-//
-//                var popup_element = popup.getElement();
-//
-//                if (e.target.getArray().length > 0){
-//                    var selected_feature = e.target.item(0);
-//                    var coordinates = selected_feature.getGeometry().getCoordinates();
-//                    var popup_content = '<div class="street-popup">'+
-//                    '<h5>Street Name:</h5><span>'+selected_feature.get(streetid_field)+'</span>'+
-//                    '<h5>Street Depth:</h5><span>'+selected_feature.get('Max_Depth')+'</span>'
-//                    + '</div>';
-////                    var coordinates = selectedFeatures.getArray().map(function(feature){
-////                        return feature.getGeometry().getCoordinates();
-////                    });
-////                    var depth = selectedFeatures.getArray().map(function(feature){
-////                        return feature.get('Max_Depth');
-////                    });
-////                    if(depth.length >0){
-////                        popup_content += '<h6>Max Depth: </h6>' + '<span>' + depth.join(', ') +'</span>';
-////                    }
-////                    var streetid = selectedFeatures.getArray().map(function(feature){
-////                        return feature.get(streetid_field);
-////                    });
-////                    if(depth.length >0){
-////                        popup_content += '<h6> Street ID: </h6>' + '<span>' + streetid.join(', ') + '</span>';
-////                    }
-////                    popup_content += '</div>';
-//                    //Clean up last popup and reinitialize
-//                    $(popup_element).popover('destroy');
-//                    setTimeout(function(){
-//                        popup.setPosition(coordinates);
-//                        $(popup_element).popover({
-//                            'placement': 'top',
-//                            'animation': true,
-//                            'html': true,
-//                            'content': popup_content
-//                        });
-//
-//                        $(popup_element).popover('show');
-//                    })
-//                } else {
-//                    // remove pop up when selecting nothing on the map
-//                    $(popup_element).popover('destroy');
-//                }
-//            });
             TETHYS_MAP_VIEW.zoomToExtent(return_data.extent) // Zoom to layer
         });
     };
 };
+
+/*
+Function to Download Streets_Inundation and show popup
+*/
+function downloadFile(){
+    var data = new FormData();
+    data.append("file_name", "Streets_Inundation");
+    var file_download = ajax_update_database_with_file("file-download-ajax",data); //Submitting the data through the ajax function, see main.js for the helper function.
+    file_download.done(function(return_data){
+        download_path = return_data.file_path;
+        document.getElementById("myPopup").innerHTML = "Shapefile downloaded to " + download_path;
+        $("#popup-modal").modal('show');
+    });
+}
 
 /*
 Function to check input fields for errors and return 1 if errors are found

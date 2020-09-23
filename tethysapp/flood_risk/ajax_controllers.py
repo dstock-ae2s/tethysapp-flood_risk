@@ -8,6 +8,7 @@ from pyproj import Proj, transform
 from django.shortcuts import render, reverse
 import geojson
 import fiona
+import shutil
 
 def file_upload(request):
     return_obj = {}
@@ -37,6 +38,35 @@ def file_upload_move_files(request):
         return_obj['success'] = "success"
 
         return JsonResponse(return_obj)
+
+def file_download(request):
+    return_obj = {}
+
+    # Get source folder
+    file_name = request.POST["file_name"]
+    SHP_DIR = "/home/dstock/tethysdev/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/" + file_name + '/'
+
+    # Get destination folder
+    pathname = os.path.expanduser('~/Downloads/') + file_name + '/'
+
+    #Copy source to destination
+    try:
+        shutil.copytree(SHP_DIR, pathname)
+    except:
+        print("File already downloaded")
+        try:
+            pathname = pathname[:-1]+'_copy/'
+            shutil.copytree(SHP_DIR, pathname)
+        except:
+            print("File already downloaded")
+            try:
+                pathname = pathname[:-1] + '_copy/'
+                shutil.copytree(SHP_DIR, pathname)
+            except:
+                print("File already downloaded")
+
+    return_obj['file_path'] = pathname
+    return JsonResponse(return_obj)
 
 
 """
@@ -217,6 +247,10 @@ def streets_process(request):
                 streets_with_depth = streets_divided.merge(raster_stats_dataframe, on='Index')
                 if not streets_with_depth.empty:
                     # Export street flooding shapefile in original crs
+                    # pathname = os.path.expanduser('~/Downloads/')
+                    # os.chdir(pathname)
+                    # streets_with_depth.to_file(filename=("Streets_Inundation.shp"))
+
                     mk_change_directory("Streets_Inundation")
                     streets_with_depth.to_file(filename=("Streets_Inundation.shp"))
 

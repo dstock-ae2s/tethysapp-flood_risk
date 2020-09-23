@@ -71,9 +71,25 @@
     cursor: pointer;
     float: left;
 }
-
 /* Add a background color to the button if it is clicked on */
 .collapsible:hover {
+    background-color: #D3D3D3;
+}
+/* Style the button that is used to download files */
+.downloadBtn {
+    color: #000000;
+    background-color: #FFFFFF;
+    border: none;
+    display: block;
+    text-align: center;
+    padding: 0;
+    border-radius: 5px;
+    width: 20px;
+    transition: all 0.5s;
+    cursor: pointer;
+}
+/* Add a background color to the button if it is clicked on */
+.downloadBtn:hover {
     background-color: #D3D3D3;
 }
 

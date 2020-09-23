@@ -1,6 +1,7 @@
 from django.http import JsonResponse, HttpResponse, Http404
 import fiona
 import os
+import glob
 from shapely.geometry import MultiPolygon, Point, shape, mapping, LineString, Polygon, MultiLineString
 from .utilities import *
 from osgeo import ogr, osr
@@ -55,6 +56,11 @@ def move_files_get_fields(shapefile, file_name, filetype):
 
     mk_change_directory(file_name)
 
+    # Remove existing files in directory
+    files = glob.glob(SHP_DIR+'*')
+    for f in files:
+        os.remove(f)
+
     field_list = []
     return_obj = {}
 
@@ -90,6 +96,11 @@ def move_files(shapefile, file_name):
     SHP_DIR = '/home/dstock/tethysdev/tethysapp-flood_risk/tethysapp/flood_risk/workspaces/user_workspaces/' + file_name + '/'
 
     mk_change_directory(file_name)
+
+    # Remove existing files in directory
+    files = glob.glob(SHP_DIR + '*')
+    for f in files:
+        os.remove(f)
 
     # Iterate over files and add to user workspace
     for f in shapefile:
