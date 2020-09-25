@@ -119,10 +119,14 @@ process_streets = function(data) {
             document.getElementById("download_button").classList.remove("hideDiv");
 
             //Show and update map
-
             ol_map = TETHYS_MAP_VIEW.getMap();
             document.getElementById("street_map").classList.remove("hideDiv"); // Show the map
             ol_map.setSize(previous_size); // Resize the map to fit the div
+            //Remove existing layers from map
+            var layers = ol_map.getLayers();
+            layers.forEach(function(layer){
+                ol_map.removeLayer(layer);
+            });
             ol_map.renderSync(); // Update the map
             (document.getElementsByClassName("collapsible"))[0].click(); // Collapse input menu div
 
@@ -154,6 +158,22 @@ process_streets = function(data) {
                 new ol.style.Style({
                     stroke: new ol.style.Stroke({
                         color: 'yellow',
+                        width: 5,
+                        zIndex: 1
+                    })
+                })
+            ];
+            var med_style = [
+                new ol.style.Style({
+                    stroke: new ol.style.Stroke({
+                        color: '#A9A9A9',
+                        width: 6,
+                        zIndex: 0
+                    })
+                }),
+                new ol.style.Style({
+                    stroke: new ol.style.Stroke({
+                        color: 'orange',
                         width: 5,
                         zIndex: 1
                     })
@@ -194,11 +214,14 @@ process_streets = function(data) {
             // Divide geojson feature collection by Max_Depth
             var none_features = []
             var low_features = []
+            var med_features = []
             var high_features = []
             these_features.forEach(function(feature){
                 if (feature.get('Max_Depth')>1.0){
                     high_features.push(feature);
                 } else if (feature.get('Max_Depth')>0.5){
+                    med_features.push(feature);
+                } else if (feature.get('Max_Depth')>(1/3)){
                     low_features.push(feature);
                 } else {
                     none_features.push(feature);
@@ -211,6 +234,9 @@ process_streets = function(data) {
             });
             var low_vectorSource = new ol.source.Vector({
                 features: low_features
+            });
+            var med_vectorSource = new ol.source.Vector({
+                features: med_features
             });
             var high_vectorSource = new ol.source.Vector({
                 features: high_features
@@ -227,16 +253,26 @@ process_streets = function(data) {
                 source: low_vectorSource,
                 style: low_style,
             });
+            var med_streetLayer = new ol.layer.Vector({
+                name: 'Medium Risk',
+                source: med_vectorSource,
+                style: med_style,
+            });
             var high_streetLayer = new ol.layer.Vector({
                 name: 'High Risk',
                 source: high_vectorSource,
                 style: high_style,
             });
+            var basemap = new ol.layer.Tile({
+                source: new ol.source.OSM(),
+            });
 
             // Add streets layer to map
             ol_map = TETHYS_MAP_VIEW.getMap();
+            ol_map.addLayer(basemap);
             ol_map.addLayer(none_streetLayer);
             ol_map.addLayer(low_streetLayer);
+            ol_map.addLayer(med_streetLayer);
             ol_map.addLayer(high_streetLayer);
             ol_map = TETHYS_MAP_VIEW.getMap();
 
@@ -267,7 +303,7 @@ process_streets = function(data) {
             });
             ol_map.addControl(legend);
             legend.addRow({
-                title: 'Depth < 0.5',
+                title: 'Depth < 4"',
                 typeGeom:'Point',
                 style: new ol.style.Style({
                     image: new ol.style.RegularShape({
@@ -280,7 +316,7 @@ process_streets = function(data) {
                 })
             });
             legend.addRow({
-                title: '0.5 < Depth < 1.0',
+                title: '4" < Depth < 6"',
                 typeGeom:'Point',
                 style: new ol.style.Style({
                     image: new ol.style.RegularShape({
@@ -293,7 +329,20 @@ process_streets = function(data) {
                 })
             });
             legend.addRow({
-                title: 'Depth > 1.0',
+                title: '6" < Depth < 12"',
+                typeGeom:'Point',
+                style: new ol.style.Style({
+                    image: new ol.style.RegularShape({
+                        points: 4,
+                        radius: 10,
+                        angle: Math.PI / 4,
+                        stroke: new ol.style.Stroke({ color: '#A9A9A9', width: 2 }),
+                        fill: new ol.style.Fill({ color: 'orange'})
+                    })
+                })
+            });
+            legend.addRow({
+                title: 'Depth > 12"',
                 typeGeom:'Point',
                 style: new ol.style.Style({
                     image: new ol.style.RegularShape({
@@ -327,20 +376,23 @@ process_streets = function(data) {
                     var feature = ol_map.getFeaturesAtPixel(event.pixel)[0];
                 } catch(err){}
                 if(feature){
-                    var coordinate = feature.getGeometry().getCoordinates();
-                    popup.setPosition(coordinate);
-                    popupContent = '<div class="street-popup">'+
-                    '<p>Street Name: '+feature.get(streetid_field)+'</p>'+
-                    '<p>Street Depth: '+feature.get('Max_Depth')+'</p>'
-                    + '</div>';
-                    $(element).popover({
-                        container: element.parentElement,
-                        html: true,
-                        sanitize: false,
-                        content: popupContent,
-                        placement: 'top'
-                    });
-                    $(element).popover('show');
+                    $(element).popover('destroy');
+                    setTimeout(function(){
+                        var coordinate = feature.getGeometry().getCoordinates();
+                        popup.setPosition(coordinate);
+                        popupContent = '<div class="street-popup">'+
+                        '<p>Street ID: '+feature.get(streetid_field)+'</p>'+
+                        '<p>Street Depth: '+feature.get('Max_Depth')+'</p>'
+                        + '</div>';
+                        $(element).popover({
+                            container: element.parentElement,
+                            html: true,
+                            sanitize: false,
+                            content: popupContent,
+                            placement: 'top'
+                        });
+                        $(element).popover('show');
+                    },500);
                 } else {
                     $(element).popover('destroy');
                 }

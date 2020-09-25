@@ -5,6 +5,7 @@ var buffer; //Buffer around building outlines to extract depth
 var buildingid_field; //Building ID Field
 var tax_field; //Parcel value field
 var taxid_field; //Parcel ID field
+var landuse_field; //Land use field
 
 /*
 Function to upload input files without fields to the user workspace
@@ -127,29 +128,65 @@ process_buildings = function(){
     if(sum_check==0){
         var bldg_risk = ajax_update_database_with_file("building-process-ajax",data); //Submitting the data through the ajax function, see main.js for the helper function.
         bldg_risk.done(function(return_data){
+            //Show download files button
+            document.getElementById("download_button").classList.remove("hideDiv");
 
+            //Show and update map
             ol_map = TETHYS_MAP_VIEW.getMap();
             document.getElementById("building_map").classList.remove("hideDiv"); // Show the map
             ol_map.setSize(previous_size); // Resize the map to fit the div
+            //Remove existing layers from map
+            var layers = ol_map.getLayers();
+            layers.forEach(function(layer){
+                ol_map.removeLayer(layer);
+            });
             ol_map.renderSync(); // Update the map
             (document.getElementsByClassName("collapsible"))[0].click(); // Collapse input menu div
 
             // Style building layer
-            var styles = [
+            var none_style = [
                 new ol.style.Style({
                     stroke: new ol.style.Stroke({
                         color: '#A9A9A9',
-                        width: 6,
-                        zIndex: 0
+                        width: 1,
+                    }),
+                    fill: new ol.style.Fill({
+                        color: 'green',
                     })
                 }),
+            ];
+            var low_style = [
                 new ol.style.Style({
                     stroke: new ol.style.Stroke({
-                        color: '#FFD300',
-                        width: 5,
-                        zIndex: 1
+                        color: '#A9A9A9',
+                        width: 1,
+                    }),
+                    fill: new ol.style.Fill({
+                        color: 'yellow',
                     })
-                })
+                }),
+            ];
+            var med_style = [
+                new ol.style.Style({
+                    stroke: new ol.style.Stroke({
+                        color: '#A9A9A9',
+                        width: 1,
+                    }),
+                    fill: new ol.style.Fill({
+                        color: 'orange',
+                    })
+                }),
+            ];
+            var high_style = [
+                new ol.style.Style({
+                    stroke: new ol.style.Stroke({
+                        color: '#A9A9A9',
+                        width: 1,
+                    }),
+                    fill: new ol.style.Fill({
+                        color: 'red',
+                    })
+                }),
             ];
 
             // Create a geojson object holding building features
@@ -167,21 +204,69 @@ process_buildings = function(){
             // Convert from geojson to openlayers collection
             var these_features = new ol.format.GeoJSON().readFeatures(geojson_object);
 
-            // Create a new ol source and assign building features
-            var vectorSource = new ol.source.Vector({
-                features: these_features
+            // Divide geojson feature collection by Max_Depth
+            var none_features = []
+            var low_features = []
+            var med_features = []
+            var high_features = []
+            these_features.forEach(function(feature){
+                if (feature.get('Mean_Depth')>1.0){
+                    high_features.push(feature);
+                } else if (feature.get('Mean_Depth')>0.5){
+                    med_features.push(feature);
+                } else if (feature.get('Mean_Depth')>(1/3)){
+                    low_features.push(feature);
+                } else {
+                    none_features.push(feature);
+                }
+            });
+
+            // Create a new ol source and assign street features
+            var none_vectorSource = new ol.source.Vector({
+                features: none_features
+            });
+            var low_vectorSource = new ol.source.Vector({
+                features: low_features
+            });
+            var med_vectorSource = new ol.source.Vector({
+                features: med_features
+            });
+            var high_vectorSource = new ol.source.Vector({
+                features: high_features
             });
 
             // Create a new modifiable layer and assign source and style
-            var buildingLayer = new ol.layer.Vector({
-                name: 'Buildings',
-                source: vectorSource,
-                style: styles,
+            var none_streetLayer = new ol.layer.Vector({
+                name: 'No Risk',
+                source: none_vectorSource,
+                style: none_style,
+            });
+            var low_streetLayer = new ol.layer.Vector({
+                name: 'Low Risk',
+                source: low_vectorSource,
+                style: low_style,
+            });
+            var med_streetLayer = new ol.layer.Vector({
+                name: 'Medium Risk',
+                source: med_vectorSource,
+                style: med_style,
+            });
+            var high_streetLayer = new ol.layer.Vector({
+                name: 'High Risk',
+                source: high_vectorSource,
+                style: high_style,
+            });
+            var basemap = new ol.layer.Tile({
+                source: new ol.source.OSM(),
             });
 
             // Add streets layer to map
             ol_map = TETHYS_MAP_VIEW.getMap();
-            ol_map.addLayer(buildingLayer);
+            ol_map.addLayer(basemap);
+            ol_map.addLayer(none_streetLayer);
+            ol_map.addLayer(low_streetLayer);
+            ol_map.addLayer(med_streetLayer);
+            ol_map.addLayer(high_streetLayer);
             ol_map = TETHYS_MAP_VIEW.getMap();
 
             // Define a new legend
@@ -192,18 +277,121 @@ process_buildings = function(){
             });
             ol_map.addControl(legend);
             legend.addRow({
-                title: 'Buildings',
+                title: 'Depth < 4"',
                 typeGeom:'Point',
                 style: new ol.style.Style({
                     image: new ol.style.RegularShape({
                         points: 4,
                         radius: 10,
                         angle: Math.PI / 4,
-                        stroke: new ol.style.Stroke({ color: '#A9A9A9', width: 2 }),
-                        fill: new ol.style.Fill({ color: '#FFD300'})
+                        stroke: new ol.style.Stroke({ color: '#A9A9A9', width: 1 }),
+                        fill: new ol.style.Fill({ color: 'green'})
                     })
                 })
             });
+            legend.addRow({
+                title: '4" < Depth < 6"',
+                typeGeom:'Point',
+                style: new ol.style.Style({
+                    image: new ol.style.RegularShape({
+                        points: 4,
+                        radius: 10,
+                        angle: Math.PI / 4,
+                        stroke: new ol.style.Stroke({ color: '#A9A9A9', width: 1 }),
+                        fill: new ol.style.Fill({ color: 'yellow'})
+                    })
+                })
+            });
+            legend.addRow({
+                title: '6" < Depth < 12"',
+                typeGeom:'Point',
+                style: new ol.style.Style({
+                    image: new ol.style.RegularShape({
+                        points: 4,
+                        radius: 10,
+                        angle: Math.PI / 4,
+                        stroke: new ol.style.Stroke({ color: '#A9A9A9', width: 1 }),
+                        fill: new ol.style.Fill({ color: 'orange'})
+                    })
+                })
+            });
+            legend.addRow({
+                title: 'Depth > 12"',
+                typeGeom:'Point',
+                style: new ol.style.Style({
+                    image: new ol.style.RegularShape({
+                        points: 4,
+                        radius: 10,
+                        angle: Math.PI / 4,
+                        stroke: new ol.style.Stroke({ color: '#A9A9A9', width: 1 }),
+                        fill: new ol.style.Fill({ color: 'red'})
+                    })
+                })
+            });
+
+//            var scaleLineControl = new ol.control.CanvasScaleLine();
+//            ol_map.addControl(scaleLineControl);
+
+             // Print Control
+            var printControl = new ol.control.Print();
+            ol_map.addControl(printControl);
+            // On print save image file
+            printControl.on('printing', function(e){
+                $('body').css('opacity',  0.5);
+            });
+            printControl.on(['print', 'error'], function(e){
+                $('body').css('opacity',  1);
+                // Print success
+                if(e.image){
+                    e.canvas.toBlob(function(blob){
+                        saveAs(blob, 'map.'+e.imageType.replace('image/', ''));
+                    }, e.imageType);
+                } else {
+                    console.warn('No canvas to export');
+                }
+            });
+
+            // Add selection interaction
+            select = new ol.interaction.Select();
+            ol_map.addInteraction(select);
+
+            // Add a popup overlay to the map
+            var element = document.getElementById('popup');
+            var popup = new ol.Overlay({
+                element: element,
+                positioning: 'bottom-center',
+                stopEvent: false,
+                offset:[0,-10],
+            });
+            ol_map.addOverlay(popup);
+            ol_map.on('click', function(event){
+                try{
+                    var feature = ol_map.getFeaturesAtPixel(event.pixel)[0];
+                } catch(err){}
+                if(feature){
+                    $(element).popover('destroy');
+                    setTimeout(function(){
+                        var coordinate = feature.getGeometry().getCoordinates();
+                        popup.setPosition(coordinate);
+                        popupContent = '<div class="building-popup">'+
+                        '<p>Building ID: '+feature.get(buildingid_field)+'</p>'+
+                        '<p>Flood Depth: '+feature.get('Mean_Depth')+'</p>' +
+                        '<p>Value Lost: '+feature.get('Lost_Value')+'</p>'+
+                        '<p>Land Use: '+feature.get(landuse_field)+'</p>'
+                        + '</div>';
+                        $(element).popover({
+                            container: element.parentElement,
+                            html: true,
+                            sanitize: false,
+                            content: popupContent,
+                            placement: 'top'
+                        });
+                        $(element).popover('show');
+                    },500);
+                } else {
+                    $(element).popover('destroy');
+                }
+            })
             TETHYS_MAP_VIEW.zoomToExtent(return_data.extent) // Zoom to layer
         });
     }
@@ -255,6 +443,20 @@ $(function(data) { //wait for the page to load
     previous_size = ol_map.getSize(); // Retrieve map size
     document.getElementById("building_map").classList.add("hideDiv"); // Hide ol map
 });
+
+/*
+Function to Download Streets_Inundation and show popup
+*/
+function downloadFile(){
+    var data = new FormData();
+    data.append("file_name", "Landuse_Inundation");
+    var file_download = ajax_update_database_with_file("file-download-ajax",data); //Submitting the data through the ajax function, see main.js for the helper function.
+    file_download.done(function(return_data){
+        download_path = return_data.file_path;
+        document.getElementById("myPopup").innerHTML = "Shapefile downloaded to " + download_path;
+        $("#popup-modal").modal('show');
+    });
+}
 
 $("#submit-buildings").click(process_buildings);
 

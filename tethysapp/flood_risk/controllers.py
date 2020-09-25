@@ -48,10 +48,10 @@ def building(request):
 
     drawing_options = []
 
-    basemaps = ['OpenStreetMap',
-                'CartoDB',
-                'Stamen',
-                'ESRI']
+    # basemaps = ['OpenStreetMap',
+    #             'CartoDB',
+    #             'Stamen',
+    #             'ESRI']
 
     MapView.old_version = '5.3.0'
 
@@ -63,7 +63,7 @@ def building(request):
         #           {'ZoomToExtent': {'projection': 'EPSG:4326', 'extent': [-130, 22, -65, 54]}}],
         layers=[],
         view=view_options,
-        basemap=basemaps,
+        basemap=None,
         draw=drawing_options
     )
 
@@ -208,10 +208,10 @@ def manhole(request):
 
     drawing_options = []
 
-    basemaps = ['OpenStreetMap',
-                'CartoDB',
-                'Stamen',
-                'ESRI']
+    # basemaps = ['OpenStreetMap',
+    #             'CartoDB',
+    #             'Stamen',
+    #             'ESRI']
 
     MapView.old_version = '5.3.0'
 
@@ -223,7 +223,7 @@ def manhole(request):
         #           {'ZoomToExtent': {'projection': 'EPSG:4326', 'extent': [-130, 22, -65, 54]}}],
         layers=[],
         view=view_options,
-        basemap=basemaps,
+        basemap=None,
         draw=drawing_options
     )
 
@@ -262,13 +262,7 @@ def pipe(request):
                 'extent':[29.25, -4.75, 46.25, 5.2]
             }}
         ],
-        basemap=[
-            'CartoDB',
-            {'CartoDB': {'style': 'dark'}},
-            'OpenStreetMap',
-            'Stamen',
-            'ESRI'
-        ],
+        basemap=None,
         view=MVView(
             projection='EPSG:4326',
             center=[37.880859, 0.219726],

@@ -76,6 +76,21 @@ class FloodRisk(TethysAppBase):
                 controller='flood_risk.ajax_controllers.file_download'
             ),
             UrlMap(
+                name='file_download_ajax',
+                url='flood-risk/manhole/file-download-ajax',
+                controller='flood_risk.ajax_controllers.file_download'
+            ),
+            UrlMap(
+                name='file_download_ajax',
+                url='flood-risk/pipe/file-download-ajax',
+                controller='flood_risk.ajax_controllers.file_download'
+            ),
+            UrlMap(
+                name='file_download_ajax',
+                url='flood-risk/building/file-download-ajax',
+                controller='flood_risk.ajax_controllers.file_download'
+            ),
+            UrlMap(
                 name='file-upload',
                 url='flood-risk/building/file-upload',
                 controller='flood_risk.ajax_controllers.file_upload'
