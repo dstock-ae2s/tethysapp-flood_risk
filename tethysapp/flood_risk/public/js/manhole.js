@@ -102,16 +102,27 @@ process_manhole = function(data) {
     manholeid_field = document.getElementById("manhole-field-select-0").value;
     data.append("manholeid_field", manholeid_field)
 
-    street_depth = document.getElementById("mhstreet-field-select-0").value;
-    data.append("street_depth", street_depth)
+    manhole_depth = document.getElementById("manhole-field-select-1").value;
+    data.append("manhole_depth", manhole_depth)
 
     buffer = document.getElementById("manhole-buffer").value;
     data.append("buffer", buffer);
 
+    street_buffer = document.getElementById("mhstreet-buffer").value;
+    data.append("street_buffer", street_buffer);
+
+    streetid_field = document.getElementById("mhstreet-field-select-0").value;
+    data.append("streetid_field", streetid_field)
+
+    distance = document.getElementById("distance-input").value;
+    data.append("distance", distance);
+
     // Check for errors in input values
     sum_check = (check(buffer, "manhole-buffer-error")
+                +check(street_buffer, "mhstreet-buffer-error")
+                +check(streetid_field, "mhstreet-field-select-0-error")
                 +check(manholeid_field, "manhole-field-select-0-error")
-                +check(street_depth, "mhstreet-field-select-0-error"))
+                +check(manhole_depth, "manhole-field-select-1-error"))
 
 
     if(sum_check == 0){
@@ -503,7 +514,7 @@ $("#submit-manhole").click(process_manhole);
 $(function(){
 
     $('#manhole-shp-upload-input').change(function(){
-        uploadFile('#manhole-shp-upload-input', 'manhole_file', ".shp", 1);
+        uploadFile('#manhole-shp-upload-input', 'manhole_file', ".shp", 2);
     });
 
     $('#mhstreet-shp-upload-input').change(function(){

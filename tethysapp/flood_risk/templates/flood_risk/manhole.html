@@ -45,12 +45,23 @@
                 <input id ="mhstreet-shp-upload-input" class = "shp-upload-input" name="mhstreet-shp-upload-input" style="display:inline-block;" type="file" accept = ".shp, .shx, .prj, .dbf, .cpg, .sbn, .sbx, .xml" multiple>
                 <br>
                 <div id="mhstreet-select" style="display:inline-block;">
-                <label for="mhstreet-field-select-0" style="padding-right:5px;">Street Depth Field:</label>
+                <label for="mhstreet-field-select-0" style="padding-right:5px;">Street ID Field:</label>
                     <select id="mhstreet-field-select-0">
                         <option value="">Select Field</option>
                     </select>
                 </div>
                 <text id="mhstreet-field-select-0-error"> </text>
+                <br>
+                <label class ="control-label" id ="label-mhstreet-buffer" for="mhstreet-buffer">Street Buffer: </label><input type="number" step="1.0" min="0.5" id="mhstreet-buffer" name="mhstreet_buffer" placeholder="50.0" required>
+                <a data-toggle="modal" data-target="#mhstreet-buffer-modal"><span class="glyphicon glyphicon-info-sign"></span></a>
+                <text id="mhstreet-buffer-error"> </text>
+                <br>
+                <label class ="control-label" id ="label-distance-input" for="distance-input">Road Segment Length: </label><input type="number" step="10.0" min="1.0" id="distance-input" name="distance_input" placeholder="100.0" required>
+                <a data-toggle="modal" data-target="#street-distance-modal"><span class="glyphicon glyphicon-info-sign"></span></a>
+                <text id="distance-input-error"> </text>
+                <br>
+                <label class ="control-label" for="depth-shp-upload-input">Inundation Raster</label>
+                <input id ="depth-shp-upload-input" class="shp-upload-input" name="depth-shp-upload-input" style="display:inline-block;" type="file" accept = ".tif, .tfw, .xml, .ovr" multiple>
                 <br>
                 <label class ="control-label" for="manhole-shp-upload-input">Manhole Shapefile</label>
                 <input id ="manhole-shp-upload-input" class = "shp-upload-input" name="manhole-shp-upload-input" style="display:inline-block;" type="file" accept = ".shp, .shx, .prj, .dbf, .cpg, .sbn, .sbx, .xml" multiple>
@@ -60,15 +71,18 @@
                     <select id="manhole-field-select-0">
                         <option value="">Select Field</option>
                     </select>
-                </div>
                 <text id="manhole-field-select-0-error"> </text>
+                <br>
+                <label for="manhole-field-select-1" style="padding-right:5px;">Manhole Depth Field:</label>
+                    <select id="manhole-field-select-1">
+                        <option value="">Select Field</option>
+                    </select>
+                <text id="manhole-field-select-1-error"> </text>
+                </div>
                 <br>
                 <label class ="control-label" id ="label-manhole-buffer" for="manhole-buffer">Manhole Buffer: </label><input type="number" step="1.0" min="0.5" id="manhole-buffer" name="manhole_buffer" placeholder="50.0" required>
                 <a data-toggle="modal" data-target="#manhole-buffer-modal"><span class="glyphicon glyphicon-info-sign"></span></a>
                 <text id="manhole-buffer-error"> </text>
-                <br>
-                <label class ="control-label" for="depth-shp-upload-input">Inundation Raster</label>
-                <input id ="depth-shp-upload-input" class="shp-upload-input" name="depth-shp-upload-input" style="display:inline-block;" type="file" accept = ".tif, .tfw, .xml, .ovr" multiple>
             </div>
             {% gizmo button submit_manhole %}
         </form>
@@ -108,11 +122,14 @@
         <div class="modal-body">
             <p><b>This calculates the flood depth at each manhole based on the inundation raster from the streets page. Then, each manhole is determined to be either storm sewer (not enough pipe capacity) or inlet (too few storm drains) controlled. The result is a MH_Street_Inundation shapefile with a manhole depth (MH_Depth), street depth (Street_Depth), and Control (Control) field.</b></p>
             <p>Street Shapefile: Line shapefile showing locations of street segments with associated flood depths (accepts .shp, .shx, .prj, .dbf, .cpg, .sbn, .sbx, and .xml file types).</p>
-            <p>Street Depth Field: The name of the field with flood depths for each street segment.</p>
+            <p>Street ID Field: The name of the field with unique IDs for each street.</p>
+            <p>Street Buffer: The radius around each street to search for a maximum depth, in the same units as raster file.</p>
+            <p>Road Segment Length: The length of each street to be associated with each depth. Roads are divided if longer than this length</p>
+            <p>Inundation Raster: Street flood depth raster (accepts .tif, .tfw, .xml, and .ovr file types).</p>
             <p>Manhole Shapefile: Point shapefile showing locations of manholes (accepts .shp, .shx, .prj, .dbf, .cpg, .sbn, .sbx, and .xml file types).</p>
             <p>Manhole ID Field: The name of the field with unique IDs for each manhole.</p>
+            <p>Manhole Depth Field: The name of the field with flood depths for each manhole.</p>
             <p>Manhole Buffer: The radius around each manhole to search for a nearby street, in the same units as raster file. It is recommended that this value be greater than 30 ft.</p>
-            <p>Inundation Raster: Flood depth raster (accepts .tif, .tfw, .xml, and .ovr file types).</p>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
@@ -130,6 +147,40 @@
         </div>
         <div class="modal-body">
             <p>Radius around each manhole to search for a nearby street, in the same units as raster file. It is recommended that this value be greater than 30 ft.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" data-dismiss="modal">OK</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="mhstreet-buffer-modal" tabindex="-1" role="dialog" aria-labelledby="help-modal-label">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        </div>
+        <div class="modal-body">
+            <p>Radius around each street to extract a maximum depth from the raster. Typically the roadway width or a small (0.001) value if using road centerline depths.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" data-dismiss="modal">OK</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="street-distance-modal" tabindex="-1" role="dialog" aria-labelledby="help-modal-label">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        </div>
+        <div class="modal-body">
+            <p>Length of desired road segments to associated with maximum depth</p>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>

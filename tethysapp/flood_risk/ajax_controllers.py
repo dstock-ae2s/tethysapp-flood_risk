@@ -288,49 +288,67 @@ def manhole_process(request):
     if request.is_ajax() and request.method == 'POST':
 
         # Read in input fields
-        street_depth = request.POST["street_depth"]
-        f_path = find_file("mhstreet_file", ".shp")
-        join_file = gpd.GeoDataFrame.from_file(f_path)
-
+        manhole_depth = request.POST["manhole_depth"]
         manholeid = request.POST["manholeid_field"]
-        buffer_val = 0.5
+        streetid = request.POST["streetid_field"]
+        buffer_val = request.POST["street_buffer"]
+        distance_val = request.POST["distance"]
 
-        # Buffer manholes and extract max depth at manholes
-        add_buffer(manholeid, buffer_val, "manhole_file", "Manhole_buffered", 'Polygon', 'Point')
-        max_int_results = max_intersect("Manhole_buffered", "depth_file")
-        if not max_int_results['is_dataframe_empty']:
-            raster_stats_dataframe = max_int_results['return_dataframe']
-            raster_stats_dataframe['Max_Depth']=raster_stats_dataframe['max']
-            raster_stats_dataframe = raster_stats_dataframe.drop(columns=['max', 'geometry'])
-            target_file = gpd.read_file(find_file("manhole_file", ".shp"))
-            target_file.fillna(0, inplace=True)
-            if 'Max_Depth' in target_file.columns:
-                target_file=target_file.drop(columns=['Max_Depth'])
+        # Extract max street depth from raster
 
-            # Add fields from original manhole shapefile to new file
-            manholes_with_depth = target_file.merge(raster_stats_dataframe, on=manholeid)
-            if not manholes_with_depth.empty:
-                # Export manhole shapefile with depth in original crs
-                mk_change_directory("Manhole_Inundation")
-                manholes_with_depth.to_file(filename="Manhole_Inundation.shp")
+        # Split streets at set distance interval
+        divide_lines(str(streetid), float(distance_val), "mhstreet_file", "mhstreet_divided")
 
-                if not os.stat(find_file("Manhole_Inundation", ".shp")).st_size == 0:
+        # Edit file to include all fields
+        output_file_path = find_file("mhstreet_divided", ".shp")
+
+        this_output = gpd.read_file(output_file_path)
+        this_output.fillna(0, inplace=True)
+
+        input_file_path = find_file("mhstreet_file", ".shp")
+        this_input = gpd.read_file(input_file_path)
+        this_input = this_input.drop(columns=['geometry'])
+        this_input.fillna(0, inplace=True)
+
+        # Associate input street shapefile fields with divided streets shapefile
+        streets_with_info = this_output.merge(this_input, on=streetid)
+
+        # Check if the dataframe is empty and if not export to shapefile
+        if not streets_with_info.empty:
+            mk_change_directory("mhstreet_divided")
+            streets_with_info.to_file(filename=("mhstreet_divided.shp"), overwrite=True)
+
+            # Buffer divided streets shapefile
+            add_buffer(streetid, buffer_val, "mhstreet_divided", "mhstreet_buffered", 'Polygon', 'LineString')
+            # Extract max flood depth within each street polygon
+            max_int_results = max_intersect("mhstreet_buffered", "depth_file")
+            if not max_int_results['is_dataframe_empty']:
+                raster_stats_dataframe = max_int_results['return_dataframe']
+                raster_stats_dataframe['St_Depth'] = raster_stats_dataframe['max']
+                raster_stats_dataframe.fillna(0, inplace=True)
+                raster_stats_dataframe = raster_stats_dataframe[['Index', 'St_Depth']]
+                streets_divided = gpd.read_file(find_file("mhstreet_divided", ".shp"))
+                streets_divided.fillna(0, inplace=True)
+                # Associate flood depth with divided streets shapefile
+                streets_with_depth = streets_divided.merge(raster_stats_dataframe, on='Index')
+
+                # Buffer manholes and extract nearby street depth
+                if not streets_with_depth.empty:
                     buffer_val = request.POST["buffer"]
                     add_buffer(manholeid, buffer_val, "manhole_file", "Manhole_radius", 'Polygon', 'Point')
 
-                    mh_inun = find_file("Manhole_Inundation", ".shp")
+                    mh_inun = find_file("manhole_file", ".shp")
                     mh_inun = gpd.GeoDataFrame.from_file(mh_inun)
 
-                    join_file = join_file.rename(columns={str(street_depth): 'St_Depth'})
-                    if manholeid in join_file.columns:
-                        print(join_file.columns)
-                        join_file = join_file.drop(columns=[manholeid])
+                    if manholeid in streets_with_depth.columns:
+                        print(streets_with_depth.columns)
+                        streets_with_depth = streets_with_depth.drop(columns=[manholeid])
 
                     shapefile = find_file("Manhole_radius", ".shp")
                     target_file = gpd.GeoDataFrame.from_file(shapefile)
 
                     # Spatially join street inundation and manhole inundation files
-                    manholes_with_streets = sjoin(join_file, target_file, how='right', op='intersects')
+                    manholes_with_streets = sjoin(streets_with_depth, target_file, how='right', op='intersects')
                     print(manholes_with_streets.columns)
 
                     # Group by objectid to take the max street depth for each manhole objectid
@@ -339,7 +357,7 @@ def manhole_process(request):
 
                     # Merge file with manhole file per objectid
                     mh_inun = mh_inun.merge(agg_manhole_street_depth, on=str(manholeid))
-                    mh_inun = mh_inun.rename(columns={'Max_Depth': 'MH_Depth'})
+                    mh_inun = mh_inun.rename(columns={manhole_depth: 'MH_Depth'})
 
                     # Determine control at each manhole
                     for idx, row in mh_inun.iterrows():
