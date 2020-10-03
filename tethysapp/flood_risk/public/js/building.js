@@ -101,11 +101,7 @@ process_buildings = function(){
     //Read in input fields
 
     var residential_landuse = []
-    for (i=0; i<landuse_options.length; i++){
-        if(document.getElementById("landuse-"+String(i)).checked==true){
-            residential_landuse.push(document.getElementById("landuse-"+String(i)).value)
-        }
-    }
+
     data.append("residential_landuse", residential_landuse)
 
     buffer = document.getElementById("buffer-input").value;
@@ -159,6 +155,11 @@ process_buildings = function(){
                 +check(landuse_field, "landuse-field-select-1-error"))
 
     if(sum_check==0){
+        for (i=0; i<landuse_options.length; i++){
+            if(document.getElementById("landuse-"+String(i)).checked==true){
+                residential_landuse.push(document.getElementById("landuse-"+String(i)).value)
+            }
+        }
         var bldg_risk = ajax_update_database_with_file("building-process-ajax",data); //Submitting the data through the ajax function, see main.js for the helper function.
         bldg_risk.done(function(return_data){
             //Show download files button

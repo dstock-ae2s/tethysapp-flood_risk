@@ -107,7 +107,7 @@
             <p>Street Shapefile: Line shapefile showing locations of streets (accepts .shp, .shx, .prj, .dbf, .cpg, .sbn, .sbx, and .xml file types).</p>
             <p>Street ID Field: The name of the field with unique IDs for each street.</p>
             <p>Road Segment Length: The length of each street to be associated with each depth. Roads are divided if longer than this length</p>
-            <p>Street Buffer: The distance around each street centerline to search for a maximum flowrate, in the same units as raster file. It is recommended that this value be equal to the average street width.</p>
+            <p>Street Buffer: The distance on either side of each street centerline to search for a maximum flowrate, in the same units as raster file. It is recommended that this value be equal to half the average street width.</p>
             <p>Inundation Raster: Flood depth raster (accepts .tif, .tfw, .xml, and .ovr file types).</p>
         </div>
         <div class="modal-footer">
@@ -125,7 +125,7 @@
           <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
         </div>
         <div class="modal-body">
-            <p>Radius around each road segment to pull a maximum depth from. Could be equal to road width</p>
+            <p>Distance on either side of each road centerline to extract a maximum depth from. Could be equal to half the road width</p>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
@@ -142,7 +142,7 @@
           <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
         </div>
         <div class="modal-body">
-            <p>Length of desired road segments to associated with maximum depth</p>
+            <p>Length of desired road segments to associated with maximum depth. Roads are divided to show which sections of the roadway are flooded.</p>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
