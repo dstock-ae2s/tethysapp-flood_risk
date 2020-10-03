@@ -6,6 +6,7 @@ var buildingid_field; //Building ID Field
 var tax_field; //Parcel value field
 var taxid_field; //Parcel ID field
 var landuse_field; //Land use field
+var landuse_options; //Unique values in land use field
 
 /*
 Function to upload input files without fields to the user workspace
@@ -98,6 +99,14 @@ process_buildings = function(){
     var data = new FormData();
 
     //Read in input fields
+
+    var residential_landuse = []
+    for (i=0; i<landuse_options.length; i++){
+        if(document.getElementById("landuse-"+String(i)).checked==true){
+            residential_landuse.push(document.getElementById("landuse-"+String(i)).value)
+        }
+    }
+    data.append("residential_landuse", residential_landuse)
 
     buffer = document.getElementById("buffer-input").value;
     data.append("buffer", buffer);
@@ -456,6 +465,45 @@ function depthInputs(inputNum){
 };
 
 /*
+Function to populate checkboxes for residential landuse
+*/
+function residentialLanduse(landuseField, file_name, filetype){
+    //Preparing data to be submitted via AJAX POST request
+    var data = new FormData();
+    data.append("file_name", file_name);
+    data.append("filetype", filetype);
+    landuse_field = document.getElementById(landuseField).value;
+    data.append("landuse_field", landuse_field);
+
+    var residential_landuse = ajax_update_database_with_file("residential-landuse-ajax", data); //Submitting the data through the ajax function, see main.js for the helper function.
+    residential_landuse.done(function(return_data){ //Reset the form once the data is added succesfully
+        if("residential" in return_data){
+            landuse_options = return_data.residential;
+            console.log(landuse_options);
+            var checkbox = document.getElementById('residential-landuse-checkboxes');
+
+            // Clear all existing options first:
+            checkbox.innerHTML = "";
+
+            // Populate list with options:
+            for(var i = 0; i < landuse_options.length; i++){
+                var opt = landuse_options[i];
+                if(i==0){
+                    checkbox.innerHTML += "<input type=\"checkbox\" id=\"landuse-"+String(i)+"\" value=\"" + opt + "\">"
+                    checkbox.innerHTML += "<label class=\"landuse1\" for=\"landuse-"+String(i)+"\"> " + opt + " </label>"
+                } else if (i%3 == 0){
+                    checkbox.innerHTML += "<br><input type=\"checkbox\" id=\"landuse-"+String(i)+"\" value=\"" + opt + "\">"
+                    checkbox.innerHTML += "<label class=\"landuse1\" for=\"landuse-"+String(i)+"\"> " + opt + " </label>"
+                } else {
+                    checkbox.innerHTML += "<input type=\"checkbox\" id=\"landuse-"+String(i)+"\" value=\"" + opt + "\">"
+                    checkbox.innerHTML += "<label class=\"landuse1\"for=\"landuse-"+String(i)+"\"> " + opt + " </label>"
+                }
+            }
+        };
+    });
+};
+
+/*
 Function to hide input menu div when button is clicked
 */
 $(function(data){
@@ -520,6 +568,10 @@ $(function(){
     $('#depth-value-0').change(function(){depthInputs(0)});
     $('#depth-value-1').change(function(){depthInputs(1)});
     $('#depth-value-2').change(function(){depthInputs(2)});
+
+    $('#landuse-field-select-1').change(function(){
+        residentialLanduse('landuse-field-select-1', 'landuse_file', ".shp")
+    });
 
 
 });

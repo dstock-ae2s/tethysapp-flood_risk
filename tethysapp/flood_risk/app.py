@@ -71,6 +71,11 @@ class FloodRisk(TethysAppBase):
                 controller='flood_risk.ajax_controllers.pipe_process'
             ),
             UrlMap(
+                name='residential_landuse_ajax',
+                url='flood-risk/building/residential-landuse-ajax',
+                controller='flood_risk.ajax_controllers.residential_landuse'
+            ),
+            UrlMap(
                 name='file_download_ajax',
                 url='flood-risk/street/file-download-ajax',
                 controller='flood_risk.ajax_controllers.file_download'

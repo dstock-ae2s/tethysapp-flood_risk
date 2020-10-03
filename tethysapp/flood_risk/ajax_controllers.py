@@ -68,6 +68,33 @@ def file_download(request):
     return_obj['file_path'] = pathname
     return JsonResponse(return_obj)
 
+"""
+Ajax controller which finds land use fields in shapefile
+"""
+def residential_landuse(request):
+    return_obj = {}
+
+    if request.is_ajax() and request.method == 'POST':
+        filetype = request.POST["filetype"]
+        file_name = request.POST["file_name"]
+        landuse_field = request.POST["landuse_field"]
+
+        f_path = find_file(file_name, filetype)
+        landuse_file = gpd.read_file(f_path)
+        landuse_file.fillna(0, inplace=True)
+        landuse_file = landuse_file.rename(columns={landuse_field: 'landuse'})
+        residential = landuse_file.landuse.unique()
+
+        landuse_residential = []
+        for use in residential:
+            landuse_residential.append(use)
+        print(landuse_residential)
+
+        # residential = json.loads(landuse_residential)
+        return_obj["residential"] = landuse_residential
+
+    return JsonResponse(return_obj)
+
 
 """
 Ajax controller which imports building shapefiles to the user workspace
@@ -78,6 +105,7 @@ def building_process(request):
     if request.is_ajax() and request.method == 'POST':
 
         # Import text entries and field names
+        residential_landuse = request.POST["residential_landuse"]
         buffer_val = request.POST["buffer"]
         buildingid_field = request.POST["buildingid_field"]
         taxid_field = request.POST["taxid_field"]
@@ -172,7 +200,7 @@ def building_process(request):
                                 target_file = target_file.rename(columns={landuse_field:'Land_Use'})
                                 target_file.Land_Use.apply(str)
                                 for idx, row in target_file.iterrows():
-                                    if target_file.loc[idx, 'Land_Use'] == 'A' or target_file.loc[idx, 'Land_Use'] == 'G' or target_file.loc[idx, 'Land_Use'] == 'J':
+                                    if target_file.loc[idx, 'Land_Use'] in residential_landuse:
                                         target_file.loc[idx, 'Residential'] = 1
                                     else:
                                         target_file.loc[idx, 'Residential'] = 0
