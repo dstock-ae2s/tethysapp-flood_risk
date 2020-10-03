@@ -114,12 +114,31 @@ process_manhole = function(data) {
     streetid_field = document.getElementById("mhstreet-field-select-0").value;
     data.append("streetid_field", streetid_field)
 
+    street_depth = document.getElementById("mhstreet-field-select-1").value;
+    data.append("street_depth", street_depth)
+    console.log(street_depth)
+
     distance = document.getElementById("distance-input").value;
     data.append("distance", distance);
 
+    street_rad = document.forms[0].elements.street_radio.value;
+    data.append("street_rad", street_rad)
+
+    var street_depth_check;
+    var street_buffer_check;
+    if(street_rad=="yes"){
+        street_buffer_check = 0;
+        street_depth_check = check(street_depth, "mhstreet-field-select-1-error");
+    } else{
+        street_buffer_check = check(street_buffer, "mhstreet-buffer-error");
+        street_depth_check = 0;
+    }
+
     // Check for errors in input values
     sum_check = (check(buffer, "manhole-buffer-error")
-                +check(street_buffer, "mhstreet-buffer-error")
+                +street_buffer_check
+                +check(distance, "distance-input-error")
+                +street_depth_check
                 +check(streetid_field, "mhstreet-field-select-0-error")
                 +check(manholeid_field, "manhole-field-select-0-error")
                 +check(manhole_depth, "manhole-field-select-1-error"))
@@ -250,11 +269,9 @@ process_manhole = function(data) {
                 var med_features = []
                 var high_features = []
                 these_features.forEach(function(feature){
-                    if (feature.get('MH_Depth')>0.5){
-                        high_features.push(feature);
-                    } else if (feature.get('MH_Depth')>0){
+                    if (feature.get('Control')=='Inlet Controlled'){
                         med_features.push(feature);
-                    } else if (feature.get('MH_Depth')>(-1)){
+                    } else if (feature.get('Control')=='Storm Sewer Controlled'){
                         low_features.push(feature);
                     } else {
                         none_features.push(feature);
@@ -270,9 +287,6 @@ process_manhole = function(data) {
                 });
                 var med_vectorSource = new ol.source.Vector({
                     features: med_features
-                });
-                var high_vectorSource = new ol.source.Vector({
-                    features: high_features
                 });
 
                 // Create a new modifiable layer and assign source and style
@@ -291,11 +305,6 @@ process_manhole = function(data) {
                     source: med_vectorSource,
                     style: med_style,
                 });
-                var high_layer = new ol.layer.Vector({
-                    name: 'High Risk',
-                    source: high_vectorSource,
-                    style: high_style,
-                });
                 var basemap = new ol.layer.Tile({
                     source: new ol.source.OSM(),
                 });
@@ -306,7 +315,6 @@ process_manhole = function(data) {
                 ol_map.addLayer(none_layer);
                 ol_map.addLayer(low_layer);
                 ol_map.addLayer(med_layer);
-                ol_map.addLayer(high_layer);
                 ol_map = TETHYS_MAP_VIEW.getMap();
 
                 // Print Control
@@ -335,24 +343,9 @@ process_manhole = function(data) {
                     collapsed: false
                 });
                 ol_map.addControl(legend);
+
                 legend.addRow({
-                    title: '>6" Above Rim',
-                    typeGeom:'Point',
-                    style: new ol.style.Style({
-                        image: new ol.style.Circle({
-                            stroke: new ol.style.Stroke({
-                                color: '#A9A9A9',
-                                width: 1,
-                            }),
-                            fill: new ol.style.Fill({
-                                color: 'red',
-                            }),
-                            radius: 5
-                        })
-                    })
-                });
-                legend.addRow({
-                    title: '<6" Above Rim',
+                    title: 'Inlet Controlled',
                     typeGeom:'Point',
                     style: new ol.style.Style({
                         image: new ol.style.Circle({
@@ -368,7 +361,7 @@ process_manhole = function(data) {
                     })
                 });
                 legend.addRow({
-                    title: "<1' Below Rim",
+                    title: "Storm Sewer Controlled",
                     typeGeom:'Point',
                     style: new ol.style.Style({
                         image: new ol.style.Circle({
@@ -384,7 +377,7 @@ process_manhole = function(data) {
                     })
                 });
                 legend.addRow({
-                    title: ">1' Below Rim",
+                    title: "Not in ROW/Model",
                     typeGeom:'Point',
                     style: new ol.style.Style({
                         image: new ol.style.Circle({
@@ -462,6 +455,23 @@ function downloadFile(){
     });
 }
 
+
+/*
+Function which hides inputs based on radio button
+*/
+hide_field = function(id_field){
+    x = document.getElementById(id_field);
+    x.style.display = "none";
+}
+
+/*
+Function which shows inputs based on radio button
+*/
+show_field = function(id_field){
+    x = document.getElementById(id_field);
+    x.style.display = "inline-block";
+}
+
 /*
 Function to check input fields for errors and return 1 if errors are found
 */
@@ -518,11 +528,32 @@ $(function(){
     });
 
     $('#mhstreet-shp-upload-input').change(function(){
-        uploadFile('#mhstreet-shp-upload-input', 'mhstreet_file', ".shp", 1);
+        uploadFile('#mhstreet-shp-upload-input', 'mhstreet_file', ".shp", 2);
     });
 
     $('#depth-shp-upload-input').change(function(){
         uploadFileNoFields('#depth-shp-upload-input', 'depth_file');
+    });
+
+
+    if(document.forms[0].elements.street_radio.value == "yes"){
+        console.log("yes")
+        show_field('mhstreet-depth');
+        hide_field('street-depth-raster');
+        hide_field('mhstreet-buffer-group');
+    }
+    $(document.forms[0].elements.street_radio).change(function(){
+        if(document.forms[0].elements.street_radio.value == "no"){
+            console.log("no")
+            hide_field('mhstreet-depth');
+            show_field('street-depth-raster');
+            show_field('mhstreet-buffer-group');
+        } else {
+            console.log("yes")
+            show_field('mhstreet-depth');
+            hide_field('street-depth-raster');
+            hide_field('mhstreet-buffer-group');
+        };
     });
 
 });

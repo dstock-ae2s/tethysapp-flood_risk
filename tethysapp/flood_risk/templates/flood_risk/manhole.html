@@ -41,6 +41,16 @@
         <form action="" method="post" enctype="multipart/form-data">
             {% csrf_token %}
             <div class="form-group manhole_upload">
+                <text>Is a depth associated with street shapefile?</text>
+                <label class="radio-inline">
+                    <input type="radio" name="street_radio" checked="checked" value="yes">Yes
+                    <span class="radio-inline"></span>
+                </label>
+                <label class="radio-inline">
+                    <input type="radio" name="street_radio" value="no">No
+                    <span class="radio-inline"></span>
+                </label>
+                <br>
                 <label class ="control-label" for="mhstreet-shp-upload-input">Street Shapefile</label>
                 <input id ="mhstreet-shp-upload-input" class = "shp-upload-input" name="mhstreet-shp-upload-input" style="display:inline-block;" type="file" accept = ".shp, .shx, .prj, .dbf, .cpg, .sbn, .sbx, .xml" multiple>
                 <br>
@@ -52,16 +62,29 @@
                 </div>
                 <text id="mhstreet-field-select-0-error"> </text>
                 <br>
-                <label class ="control-label" id ="label-mhstreet-buffer" for="mhstreet-buffer">Street Buffer: </label><input type="number" step="1.0" min="0.5" id="mhstreet-buffer" name="mhstreet_buffer" placeholder="50.0" required>
-                <a data-toggle="modal" data-target="#mhstreet-buffer-modal"><span class="glyphicon glyphicon-info-sign"></span></a>
-                <text id="mhstreet-buffer-error"> </text>
+                <div id="mhstreet-depth" style="display:inline-block;">
+                    <label for="mhstreet-field-select-1" style="padding-right:5px;">Street Depth Field:</label>
+                    <select id="mhstreet-field-select-1">
+                        <option value="">Select Field</option>
+                    </select>
+                    <text id="mhstreet-field-select-1-error"> </text>
+                    <br>
+                </div>
+                <div id="mhstreet-buffer-group">
+                    <label class ="control-label" id ="label-mhstreet-buffer" for="mhstreet-buffer">Street Buffer: </label><input type="number" step="1.0" min="0.5" id="mhstreet-buffer" name="mhstreet_buffer" placeholder="50.0" required>
+                    <a data-toggle="modal" data-target="#mhstreet-buffer-modal"><span class="glyphicon glyphicon-info-sign"></span></a>
+                    <text id="mhstreet-buffer-error"> </text>
+                </div>
                 <br>
                 <label class ="control-label" id ="label-distance-input" for="distance-input">Road Segment Length: </label><input type="number" step="10.0" min="1.0" id="distance-input" name="distance_input" placeholder="100.0" required>
                 <a data-toggle="modal" data-target="#street-distance-modal"><span class="glyphicon glyphicon-info-sign"></span></a>
                 <text id="distance-input-error"> </text>
                 <br>
-                <label class ="control-label" for="depth-shp-upload-input">Inundation Raster</label>
-                <input id ="depth-shp-upload-input" class="shp-upload-input" name="depth-shp-upload-input" style="display:inline-block;" type="file" accept = ".tif, .tfw, .xml, .ovr" multiple>
+                <div id="street-depth-raster">
+                    <label class ="control-label" for="depth-shp-upload-input">Inundation Raster</label>
+                    <input id ="depth-shp-upload-input" class="shp-upload-input" name="depth-shp-upload-input" style="display:inline-block;" type="file" accept = ".tif, .tfw, .xml, .ovr" multiple>
+                </div>
+                <br>
                 <br>
                 <label class ="control-label" for="manhole-shp-upload-input">Manhole Shapefile</label>
                 <input id ="manhole-shp-upload-input" class = "shp-upload-input" name="manhole-shp-upload-input" style="display:inline-block;" type="file" accept = ".shp, .shx, .prj, .dbf, .cpg, .sbn, .sbx, .xml" multiple>

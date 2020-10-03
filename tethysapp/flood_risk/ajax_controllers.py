@@ -332,6 +332,8 @@ def manhole_process(request):
         streetid = request.POST["streetid_field"]
         buffer_val = request.POST["street_buffer"]
         distance_val = request.POST["distance"]
+        street_rad = request.POST["street_rad"]
+        street_depth = ""
 
         # Extract max street depth from raster
 
@@ -357,83 +359,93 @@ def manhole_process(request):
             mk_change_directory("mhstreet_divided")
             streets_with_info.to_file(filename=("mhstreet_divided.shp"), overwrite=True)
 
-            # Buffer divided streets shapefile
-            add_buffer(streetid, buffer_val, "mhstreet_divided", "mhstreet_buffered", 'Polygon', 'LineString')
-            # Extract max flood depth within each street polygon
-            max_int_results = max_intersect("mhstreet_buffered", "depth_file")
-            if not max_int_results['is_dataframe_empty']:
-                raster_stats_dataframe = max_int_results['return_dataframe']
-                raster_stats_dataframe['St_Depth'] = raster_stats_dataframe['max']
-                raster_stats_dataframe.fillna(0, inplace=True)
-                raster_stats_dataframe = raster_stats_dataframe[['Index', 'St_Depth']]
-                streets_divided = gpd.read_file(find_file("mhstreet_divided", ".shp"))
-                streets_divided.fillna(0, inplace=True)
-                # Associate flood depth with divided streets shapefile
-                streets_with_depth = streets_divided.merge(raster_stats_dataframe, on='Index')
+            # If the street radio button is yes extract the depth from the raster and associate with divided streets
+            if street_rad == "yes":
+                street_depth = request.POST["street_depth"]
+                streets_with_depth = streets_with_info
+            else:
+                street_depth = 'St_Depth'
 
-                # Buffer manholes and extract nearby street depth
-                if not streets_with_depth.empty:
-                    buffer_val = request.POST["buffer"]
-                    add_buffer(manholeid, buffer_val, "manhole_file", "Manhole_radius", 'Polygon', 'Point')
+                # Buffer divided streets shapefile
+                add_buffer(streetid, buffer_val, "mhstreet_divided", "mhstreet_buffered", 'Polygon', 'LineString')
+                # Extract max flood depth within each street polygon
+                max_int_results = max_intersect("mhstreet_buffered", "depth_file")
 
-                    mh_inun = find_file("manhole_file", ".shp")
-                    mh_inun = gpd.GeoDataFrame.from_file(mh_inun)
+                if not max_int_results['is_dataframe_empty']:
+                    raster_stats_dataframe = max_int_results['return_dataframe']
+                    raster_stats_dataframe[street_depth] = raster_stats_dataframe['max']
+                    raster_stats_dataframe.fillna(0, inplace=True)
+                    raster_stats_dataframe = raster_stats_dataframe[['Index', street_depth]]
+                    streets_divided = gpd.read_file(find_file("mhstreet_divided", ".shp"))
+                    streets_divided.fillna(0, inplace=True)
+                    # Associate flood depth with divided streets shapefile
+                    streets_with_depth = streets_divided.merge(raster_stats_dataframe, on='Index')
 
-                    if manholeid in streets_with_depth.columns:
-                        print(streets_with_depth.columns)
-                        streets_with_depth = streets_with_depth.drop(columns=[manholeid])
+            # Buffer manholes and extract nearby street depth
+            if not streets_with_depth.empty:
+                buffer_val = request.POST["buffer"]
+                add_buffer(manholeid, buffer_val, "manhole_file", "Manhole_radius", 'Polygon', 'Point')
 
-                    shapefile = find_file("Manhole_radius", ".shp")
-                    target_file = gpd.GeoDataFrame.from_file(shapefile)
+                mh_inun = find_file("manhole_file", ".shp")
+                mh_inun = gpd.GeoDataFrame.from_file(mh_inun)
 
-                    # Spatially join street inundation and manhole inundation files
-                    manholes_with_streets = sjoin(streets_with_depth, target_file, how='right', op='intersects')
-                    print(manholes_with_streets.columns)
+                if manholeid in streets_with_depth.columns:
+                    print(streets_with_depth.columns)
+                    streets_with_depth = streets_with_depth.drop(columns=[manholeid])
 
-                    # Group by objectid to take the max street depth for each manhole objectid
-                    agg_manhole_street_depth = manholes_with_streets.groupby(str(manholeid)).agg(
-                        St_Depth=('St_Depth', 'max'))
+                shapefile = find_file("Manhole_radius", ".shp")
+                target_file = gpd.GeoDataFrame.from_file(shapefile)
 
-                    # Merge file with manhole file per objectid
-                    mh_inun = mh_inun.merge(agg_manhole_street_depth, on=str(manholeid))
-                    mh_inun = mh_inun.rename(columns={manhole_depth: 'MH_Depth'})
+                # Spatially join street inundation and manhole inundation files
+                manholes_with_streets = sjoin(streets_with_depth, target_file, how='right', op='intersects')
+                print(manholes_with_streets.columns)
 
-                    # Determine control at each manhole
-                    for idx, row in mh_inun.iterrows():
-                        if mh_inun.loc[idx, 'MH_Depth'] == 0 and mh_inun.loc[idx, 'St_Depth'] == 0:
-                            mh_inun.loc[idx, 'Control'] = "Not in ROW"
-                        elif mh_inun.loc[idx, 'MH_Depth'] <= 0 and mh_inun.loc[idx, 'St_Depth'] < 0.5:
-                            mh_inun.loc[idx, 'Control'] = "OK"
-                        elif mh_inun.loc[idx, 'MH_Depth'] <= 0 and mh_inun.loc[idx, 'St_Depth'] >= 0.5:
-                            mh_inun.loc[idx, 'Control'] = "Inlet Controlled"
-                        elif mh_inun.loc[idx, 'MH_Depth'] > 0:
-                            mh_inun.loc[idx, 'Control'] = "Storm Sewer Controlled"
-                        else:
-                            mh_inun.loc[idx, 'Control'] = "Not in ROW"
+                print(street_depth)
 
-                    if not mh_inun.empty:
-                        # Export shapefile with street depth, manhole depth, and control in input file crs
-                        mk_change_directory("MH_Street_Inundation")
-                        mh_inun.to_file("MH_Street_Inundation.shp")
+                # Group by objectid to take the max street depth for each manhole objectid
+                agg_manhole_street_depth = manholes_with_streets.groupby(str(manholeid)).agg(
+                    St_Depth=(street_depth, 'max'))
 
-                        # Find bounds of final dataframe
-                        mh_inun = mh_inun.to_crs("EPSG:4326")
-                        this_bounds = mh_inun.total_bounds
-                        x1, y1, x2, y2 = this_bounds[0], this_bounds[1], this_bounds[2], this_bounds[3]
-                        this_extent = [x1, y1, x2, y2]
-                        return_obj["extent"] = this_extent
+                # Merge file with manhole file per objectid
+                mh_inun = mh_inun.merge(agg_manhole_street_depth, on=str(manholeid))
+                mh_inun = mh_inun.rename(columns={manhole_depth: 'MH_Depth'})
 
-                        # Convert all coordinates to EPSG:3857 for openlayers vector layer
-                        mh_inun = mh_inun.to_crs("EPSG:3857")
-                        # Export manhole flooding geojson in EPSG:3857
-                        mh_inun.to_file(filename=("MH_Street_Inundation.geojson"), driver='GeoJSON')
-                        mk_change_directory("MH_Street_Inundation")
-                        mh_features = []
-                        if not os.stat(find_file("MH_Street_Inundation", ".geojson")).st_size == 0:
-                            with fiona.open("MH_Street_Inundation.geojson") as data_file:
-                                for data in data_file:
-                                    mh_features.append(data)
-                                return_obj["mh_features"] = mh_features  # Return manhole features in geojson format
+                # Determine control at each manhole
+                for idx, row in mh_inun.iterrows():
+                    if mh_inun.loc[idx, 'MH_Depth'] == 0 and mh_inun.loc[idx, 'St_Depth'] == 0:
+                        mh_inun.loc[idx, 'Control'] = "Not in ROW/Model"
+                    elif mh_inun.loc[idx, 'MH_Depth'] <= 0 and mh_inun.loc[idx, 'St_Depth'] < 0.5:
+                        mh_inun.loc[idx, 'Control'] = "OK"
+                    elif mh_inun.loc[idx, 'MH_Depth'] <= 0 and mh_inun.loc[idx, 'St_Depth'] >= 0.5:
+                        mh_inun.loc[idx, 'Control'] = "Inlet Controlled"
+                    elif mh_inun.loc[idx, 'MH_Depth'] > 0:
+                        mh_inun.loc[idx, 'Control'] = "Storm Sewer Controlled"
+                    else:
+                        mh_inun.loc[idx, 'Control'] = "Not in ROW/Model"
+
+                if not mh_inun.empty:
+                    # Export shapefile with street depth, manhole depth, and control in input file crs
+                    mk_change_directory("MH_Street_Inundation")
+                    mh_inun.to_file("MH_Street_Inundation.shp")
+
+                    # Find bounds of final dataframe
+                    mh_inun = mh_inun.to_crs("EPSG:4326")
+                    this_bounds = mh_inun.total_bounds
+                    x1, y1, x2, y2 = this_bounds[0], this_bounds[1], this_bounds[2], this_bounds[3]
+                    this_extent = [x1, y1, x2, y2]
+                    return_obj["extent"] = this_extent
+
+                    # Convert all coordinates to EPSG:3857 for openlayers vector layer
+                    mh_inun = mh_inun.to_crs("EPSG:3857")
+                    # Export manhole flooding geojson in EPSG:3857
+                    mh_inun.to_file(filename=("MH_Street_Inundation.geojson"), driver='GeoJSON')
+                    mk_change_directory("MH_Street_Inundation")
+                    mh_features = []
+                    if not os.stat(find_file("MH_Street_Inundation", ".geojson")).st_size == 0:
+                        with fiona.open("MH_Street_Inundation.geojson") as data_file:
+                            for data in data_file:
+                                mh_features.append(data)
+                            return_obj["mh_features"] = mh_features  # Return manhole features in geojson format
 
         return JsonResponse(return_obj)
 
