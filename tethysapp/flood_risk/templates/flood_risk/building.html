@@ -74,14 +74,27 @@
                     </select>
                 <text id="tax-field-select-0-error"> </text>
                 <br>
-                <label for="tax-field-select-1" style="padding-rigth:5px;">Tax Parcel Value Field:</label>
+                <label for="tax-field-select-1" style="padding-rigth:5px;">Building Value Field:</label>
                     <select id="tax-field-select-1">
                         <option value="">Select Field</option>
                     </select>
                 <a data-toggle="modal" data-target="#building-tax-modal"><span class="glyphicon glyphicon-info-sign"></span></a>
                 <text id="tax-field-select-1-error"> </text>
                 </div>
+                <br><br>
+                <b>Depth vs. Building Value Depreciation</b><br>
+                <text class ="control-label bldg-depth-lab" id ="label-depth-value-0">0.00</text> < Depth &le; <input type="number" class = "bldg-depth-val" min="0" id="depth-value-0" name="depth-value-0" value="0.25">
+                <label class ="control-label bldg-lab" id ="label-building-value-0" for="building-value-0"></label>Building Value Lost: <input type="number" class="bldg-val" min="0" id="building-value-0" name="building-value-0" value="25">%
                 <br>
+                <text class ="control-label bldg-depth-lab" id ="label-depth-value-1">0.25</text> < Depth &le; <input type="number" class = "bldg-depth-val" min="0" id="depth-value-1" name="depth-value-1" value="0.5">
+                <label class ="control-label bldg-lab" id ="label-building-value-1" for="building-value-1"></label>Building Value Lost: <input type="number" class="bldg-val" min="0" id="building-value-1" name="building-value-1" value="50">%
+                <br>
+                <text class ="control-label bldg-depth-lab" id ="label-depth-value-2">0.50</text> < Depth &le; <input type="number" class = "bldg-depth-val" min="0" id="depth-value-2" name="depth-value-2" value="1.0">
+                <label class ="control-label bldg-lab" id ="label-building-value-2" for="building-value-2"></label>Building Value Lost: <input type="number" class="bldg-val" min="0" id="building-value-2" name="building-value-2" value=75>%
+                <br>
+                <label class ="control-label bldg-depth-lab-first" id ="label-depth-value-3" for="depth-value-3"></label>Depth > <input type="number" class = "bldg-depth-val" min="0" id="depth-value-3" name="depth-value-3" value="1.0">
+                <label class ="control-label bldg-lab" id ="label-building-value-3" for="building-value-3"></label>Building Value Lost: <input type="number" class="bldg-val" min="0" id="building-value-3" name="building-value-3" value="100">%
+                <br><br>
             </div>
 
             <div class="form-group landuse_upload">
@@ -95,7 +108,7 @@
                     </select>
                 <text id="landuse-field-select-0-error"> </text>
                 <br>
-                <label for="landuse-field-select-1" style="padding-rigth:5px;">Land Use Field:</label>
+                <label for="landuse-field-select-1" style="padding-rigth:5px;">Land Use Code Field:</label>
                     <select id="landuse-field-select-1">
                         <option value="">Select Field</option>
                     </select>

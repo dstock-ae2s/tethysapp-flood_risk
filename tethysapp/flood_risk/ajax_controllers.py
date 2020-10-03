@@ -84,6 +84,15 @@ def building_process(request):
         tax_field = request.POST["tax_field"]
         landuseid_field = request.POST["landuseid_field"]
         landuse_field = request.POST["landuse_field"]
+        depth_0 = float(request.POST["depth_0"])
+        depth_1 = float(request.POST["depth_1"])
+        depth_2 = float(request.POST["depth_2"])
+        depth_3 = float(request.POST["depth_3"])
+        bldg_0 = (float(request.POST["bldg_0"])/100)
+        bldg_1 = (float(request.POST["bldg_1"])/100)
+        bldg_2 = (float(request.POST["bldg_2"])/100)
+        bldg_3 = (float(
+            request.POST["bldg_3"])/100)
 
 
         # Output building boundaries from building polygons shapefile
@@ -133,12 +142,14 @@ def building_process(request):
                             target_file = target_file.merge(agg_bldgs_depth_tax, on=str(buildingid_field))
                             target_file = target_file.rename(columns={'Max_Depth': 'Lost_Value'})
                             for idx, row in target_file.iterrows():
-                                if 0 < target_file.loc[idx, 'Mean_Depth'] < 0.5:
-                                    target_file.loc[idx, 'Lost_Value'] = 0.25 * target_file.loc[idx, 'BLDGVAL']
-                                elif 0.5 < target_file.loc[idx, 'Mean_Depth'] < 1:
-                                    target_file.loc[idx, 'Lost_Value'] = 0.5 * target_file.loc[idx, 'BLDGVAL']
-                                elif target_file.loc[idx, 'Mean_Depth'] > 1:
-                                    target_file.loc[idx, 'Lost_Value'] = 0.75 * target_file.loc[idx, 'BLDGVAL']
+                                if 0 < target_file.loc[idx, 'Mean_Depth'] <= depth_0:
+                                    target_file.loc[idx, 'Lost_Value'] = bldg_0 * target_file.loc[idx, 'BLDGVAL']
+                                elif depth_0 < target_file.loc[idx, 'Mean_Depth'] <= depth_1:
+                                    target_file.loc[idx, 'Lost_Value'] = bldg_1* target_file.loc[idx, 'BLDGVAL']
+                                elif depth_1 < target_file.loc[idx, 'Mean_Depth'] <= depth_2:
+                                    target_file.loc[idx, 'Lost_Value'] = bldg_2 * target_file.loc[idx, 'BLDGVAL']
+                                elif target_file.loc[idx, 'Mean_Depth'] > depth_3:
+                                    target_file.loc[idx, 'Lost_Value'] = bldg_3 * target_file.loc[idx, 'BLDGVAL']
                                 else:
                                     target_file.loc[idx, 'Lost_Value'] = 0
                             if not target_file.empty:

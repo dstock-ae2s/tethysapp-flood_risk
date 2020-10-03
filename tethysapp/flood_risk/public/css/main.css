@@ -7,6 +7,27 @@
     padding-bottom: 0;
 }
 
+.bldg-depth-lab{
+    width: 5px;
+    align: right;
+}
+.bldg-depth-lab-first{
+    width: 43px;
+    align: right;
+}
+.bldg-depth-val{
+    width: 50px;
+    align: left;
+}
+.bldg-lab {
+    width: 50px;
+    align: right;
+}
+.bldg-val{
+    width: 50px;
+    align: left;
+}
+
 .info-btn {
     background-color: none;
     border: none;

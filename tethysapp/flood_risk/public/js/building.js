@@ -117,6 +117,30 @@ process_buildings = function(){
     landuse_field = document.getElementById("landuse-field-select-1").value;
     data.append("landuse_field", landuse_field);
 
+    depth_0 = document.getElementById("depth-value-0").value;
+    data.append("depth_0", depth_0);
+
+    depth_1 = document.getElementById("depth-value-1").value;
+    data.append("depth_1", depth_1);
+
+    depth_2 = document.getElementById("depth-value-2").value;
+    data.append("depth_2", depth_2);
+
+    depth_3 = document.getElementById("depth-value-3").value;
+    data.append("depth_3", depth_3);
+
+    bldg_0 = document.getElementById("building-value-0").value;
+    data.append("bldg_0", bldg_0)
+
+    bldg_1 = document.getElementById("building-value-1").value;
+    data.append("bldg_1", bldg_1)
+
+    bldg_2 = document.getElementById("building-value-2").value;
+    data.append("bldg_2", bldg_2)
+
+    bldg_3 = document.getElementById("building-value-3").value;
+    data.append("bldg_3", bldg_3)
+
     //Find errors in input values
     sum_check = (check(buffer, "buffer-input-error")
                 +check(buildingid_field, "bldg-field-select-0-error")
@@ -417,6 +441,21 @@ function check(value, error_id){
 };
 
 /*
+Function to adjust HTML of following depth row on change
+*/
+function depthInputs(inputNum){
+    if(inputNum < 2){
+        console.log("label-depth-value-"+(String(inputNum+1)));
+        console.log(document.getElementById("label-depth-value-"+(String(inputNum+1))).innerHTML);
+        document.getElementById("label-depth-value-"+(String(inputNum+1))).innerHTML =String(document.getElementById("depth-value-"+String(inputNum)).value);
+    }
+    else{
+        document.getElementById("depth-value-"+(String(inputNum+1))).value = String(document.getElementById("depth-value-"+String(inputNum)).value);
+    }
+
+};
+
+/*
 Function to hide input menu div when button is clicked
 */
 $(function(data){
@@ -477,6 +516,10 @@ $(function(){
     $('#landuse-shp-upload-input').change(function(){
         uploadFile('#landuse-shp-upload-input', 'landuse_file', ".shp", 2);
     });
+
+    $('#depth-value-0').change(function(){depthInputs(0)});
+    $('#depth-value-1').change(function(){depthInputs(1)});
+    $('#depth-value-2').change(function(){depthInputs(2)});
 
 
 });
