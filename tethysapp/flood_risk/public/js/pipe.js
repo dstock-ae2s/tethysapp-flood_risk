@@ -429,7 +429,7 @@ function process_pipe(){
                 if(feature){
                     $(element).popover('destroy');
                     setTimeout(function(){
-                        var coordinate = feature.getGeometry().getCoordinates();
+                        var coordinate = feature.getGeometry().getCoordinateAt(0.5);
                         popup.setPosition(coordinate);
                         popupContent = '<div class="street-popup">'+
                         '<p>Pipe ID: '+feature.get('PIPEID')+'</p>'+

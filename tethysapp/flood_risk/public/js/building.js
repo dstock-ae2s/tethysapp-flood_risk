@@ -407,7 +407,7 @@ process_buildings = function(){
                 if(feature){
                     $(element).popover('destroy');
                     setTimeout(function(){
-                        var coordinate = feature.getGeometry().getCoordinates();
+                        var coordinate = feature.getGeometry().getLastCoordinate();
                         popup.setPosition(coordinate);
                         popupContent = '<div class="building-popup">'+
                         '<p>Building ID: '+feature.get(buildingid_field)+'</p>'+
