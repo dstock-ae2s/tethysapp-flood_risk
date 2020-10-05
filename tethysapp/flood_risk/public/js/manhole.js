@@ -95,6 +95,7 @@ and compares this with street flood depth to determine if manholes
 are inlet or storm sewer controlled
 */
 process_manhole = function(data) {
+    $("#loading-modal").modal('show');
 
     var data = new FormData();
 
@@ -146,298 +147,299 @@ process_manhole = function(data) {
 
     if(sum_check == 0){
         var manhole_risk = ajax_update_database_with_file("manhole-process-ajax",data); //Submitting the data through the ajax function, see main.js for the helper function.
-            manhole_risk.done(function(return_data){
-                //Show download files button
-                document.getElementById("download_button").classList.remove("hideDiv");
+        manhole_risk.done(function(return_data){
+            //Show download files button
+            document.getElementById("download_button").classList.remove("hideDiv");
 
-                //Show and update map
-                ol_map = TETHYS_MAP_VIEW.getMap();
-                document.getElementById("manhole_map").classList.remove("hideDiv"); // Show the map
-                ol_map.setSize(previous_size); // Resize the map to fit the div
-                //Remove existing layers from map
-                var layers = ol_map.getLayers();
-                layers.forEach(function(layer){
-                    ol_map.removeLayer(layer);
-                });
-                ol_map.renderSync(); // Update the map
-                (document.getElementsByClassName("collapsible"))[0].click(); // Collapse input menu div
+            //Show and update map
+            ol_map = TETHYS_MAP_VIEW.getMap();
+            document.getElementById("manhole_map").classList.remove("hideDiv"); // Show the map
+            ol_map.setSize(previous_size); // Resize the map to fit the div
+            //Remove existing layers from map
+            var layers = ol_map.getLayers();
+            layers.forEach(function(layer){
+                ol_map.removeLayer(layer);
+            });
+            ol_map.renderSync(); // Update the map
+            (document.getElementsByClassName("collapsible"))[0].click(); // Collapse input menu div
 
-                // Style manhole layer
-                var none_style = [
-                    new ol.style.Style({
-                        image: new ol.style.Circle({
-                            stroke: new ol.style.Stroke({
-                                color: '#A9A9A9',
-                                width: 1,
-                            }),
-                            fill: new ol.style.Fill({
-                                color: 'green',
-                            }),
-                            radius: 5
-                        }),
+            // Style manhole layer
+            var none_style = [
+                new ol.style.Style({
+                    image: new ol.style.Circle({
                         stroke: new ol.style.Stroke({
                             color: '#A9A9A9',
                             width: 1,
                         }),
                         fill: new ol.style.Fill({
                             color: 'green',
-                        })
-                    }),
-                ];
-                var low_style = [
-                    new ol.style.Style({
-                        image: new ol.style.Circle({
-                            stroke: new ol.style.Stroke({
-                                color: '#A9A9A9',
-                                width: 1,
-                            }),
-                            fill: new ol.style.Fill({
-                                color: 'yellow',
-                            }),
-                            radius: 5
                         }),
+                        radius: 5
+                    }),
+                    stroke: new ol.style.Stroke({
+                        color: '#A9A9A9',
+                        width: 1,
+                    }),
+                    fill: new ol.style.Fill({
+                        color: 'green',
+                    })
+                }),
+            ];
+            var low_style = [
+                new ol.style.Style({
+                    image: new ol.style.Circle({
                         stroke: new ol.style.Stroke({
                             color: '#A9A9A9',
                             width: 1,
                         }),
                         fill: new ol.style.Fill({
                             color: 'yellow',
-                        })
-                    }),
-                ];
-                var med_style = [
-                    new ol.style.Style({
-                        image: new ol.style.Circle({
-                            stroke: new ol.style.Stroke({
-                                color: '#A9A9A9',
-                                width: 1,
-                            }),
-                            fill: new ol.style.Fill({
-                                color: 'orange',
-                            }),
-                            radius: 5
                         }),
+                        radius: 5
+                    }),
+                    stroke: new ol.style.Stroke({
+                        color: '#A9A9A9',
+                        width: 1,
+                    }),
+                    fill: new ol.style.Fill({
+                        color: 'yellow',
+                    })
+                }),
+            ];
+            var med_style = [
+                new ol.style.Style({
+                    image: new ol.style.Circle({
                         stroke: new ol.style.Stroke({
                             color: '#A9A9A9',
                             width: 1,
                         }),
                         fill: new ol.style.Fill({
                             color: 'orange',
-                        })
-                    }),
-                ];
-                var high_style = [
-                    new ol.style.Style({
-                        image: new ol.style.Circle({
-                            stroke: new ol.style.Stroke({
-                                color: '#A9A9A9',
-                                width: 1,
-                            }),
-                            fill: new ol.style.Fill({
-                                color: 'red',
-                            }),
-                            radius: 5
                         }),
+                        radius: 5
+                    }),
+                    stroke: new ol.style.Stroke({
+                        color: '#A9A9A9',
+                        width: 1,
+                    }),
+                    fill: new ol.style.Fill({
+                        color: 'orange',
+                    })
+                }),
+            ];
+            var high_style = [
+                new ol.style.Style({
+                    image: new ol.style.Circle({
                         stroke: new ol.style.Stroke({
                             color: '#A9A9A9',
                             width: 1,
                         }),
                         fill: new ol.style.Fill({
                             color: 'red',
-                        })
+                        }),
+                        radius: 5
                     }),
-                ];
-
-                // Create a geojson object holding manhole features
-                var geojson_object = {
-                    'type': 'FeatureCollection',
-                    'crs': {
-                        'type': 'name',
-                        'properties': {
-                            'name': 'EPSG:3857'
-                        }
-                    },
-                    'features': return_data.mh_features
-                };
-
-                // Convert from geojson to openlayers collection
-                var these_features = new ol.format.GeoJSON().readFeatures(geojson_object);
-
-                // Divide geojson feature collection by Max_Depth
-                var none_features = []
-                var low_features = []
-                var med_features = []
-                var high_features = []
-                these_features.forEach(function(feature){
-                    if (feature.get('Control')=='Inlet Controlled'){
-                        med_features.push(feature);
-                    } else if (feature.get('Control')=='Storm Sewer Controlled'){
-                        low_features.push(feature);
-                    } else {
-                        none_features.push(feature);
-                    }
-                });
-
-                // Create a new ol source and assign street features
-                var none_vectorSource = new ol.source.Vector({
-                    features: none_features
-                });
-                var low_vectorSource = new ol.source.Vector({
-                    features: low_features
-                });
-                var med_vectorSource = new ol.source.Vector({
-                    features: med_features
-                });
-
-                // Create a new modifiable layer and assign source and style
-                var none_layer = new ol.layer.Vector({
-                    name: 'No Risk',
-                    source: none_vectorSource,
-                    style: none_style,
-                });
-                var low_layer = new ol.layer.Vector({
-                    name: 'Low Risk',
-                    source: low_vectorSource,
-                    style: low_style,
-                });
-                var med_layer = new ol.layer.Vector({
-                    name: 'Medium Risk',
-                    source: med_vectorSource,
-                    style: med_style,
-                });
-                var basemap = new ol.layer.Tile({
-                    source: new ol.source.OSM(),
-                });
-
-                // Add streets layer to map
-                ol_map = TETHYS_MAP_VIEW.getMap();
-                ol_map.addLayer(basemap);
-                ol_map.addLayer(none_layer);
-                ol_map.addLayer(low_layer);
-                ol_map.addLayer(med_layer);
-                ol_map = TETHYS_MAP_VIEW.getMap();
-
-                // Print Control
-                var printControl = new ol.control.Print();
-                ol_map.addControl(printControl);
-                // On print save image file
-                printControl.on('printing', function(e){
-                    $('body').css('opacity',  0.5);
-                });
-                printControl.on(['print', 'error'], function(e){
-                    $('body').css('opacity',  1);
-                    // Print success
-                    if(e.image){
-                        e.canvas.toBlob(function(blob){
-                            saveAs(blob, 'map.'+e.imageType.replace('image/', ''));
-                        }, e.imageType);
-                    } else {
-                        console.warn('No canvas to export');
-                    }
-                });
-
-                // Define a new legend
-                var legend = new ol.control.Legend({
-                    title: 'Legend',
-                    margin: 5,
-                    collapsed: false
-                });
-                ol_map.addControl(legend);
-
-                legend.addRow({
-                    title: 'Inlet Controlled',
-                    typeGeom:'Point',
-                    style: new ol.style.Style({
-                        image: new ol.style.Circle({
-                            stroke: new ol.style.Stroke({
-                                color: '#A9A9A9',
-                                width: 1,
-                            }),
-                            fill: new ol.style.Fill({
-                                color: 'orange',
-                            }),
-                            radius: 5
-                        })
+                    stroke: new ol.style.Stroke({
+                        color: '#A9A9A9',
+                        width: 1,
+                    }),
+                    fill: new ol.style.Fill({
+                        color: 'red',
                     })
-                });
-                legend.addRow({
-                    title: "Storm Sewer Controlled",
-                    typeGeom:'Point',
-                    style: new ol.style.Style({
-                        image: new ol.style.Circle({
-                            stroke: new ol.style.Stroke({
-                                color: '#A9A9A9',
-                                width: 1,
-                            }),
-                            fill: new ol.style.Fill({
-                                color: 'yellow',
-                            }),
-                            radius: 5
-                        })
-                    })
-                });
-                legend.addRow({
-                    title: "Not in ROW/Model",
-                    typeGeom:'Point',
-                    style: new ol.style.Style({
-                        image: new ol.style.Circle({
-                            stroke: new ol.style.Stroke({
-                                color: '#A9A9A9',
-                                width: 1,
-                            }),
-                            fill: new ol.style.Fill({
-                                color: 'green',
-                            }),
-                            radius: 5
-                        })
-                    })
-                });
+                }),
+            ];
 
-    //            var scaleLineControl = new ol.control.CanvasScaleLine();
-    //            ol_map.addControl(scaleLineControl);
-
-                // Add selection interaction
-                select = new ol.interaction.Select();
-                ol_map.addInteraction(select);
-
-                // Add a popup overlay to the map
-                var element = document.getElementById('popup');
-                var popup = new ol.Overlay({
-                    element: element,
-                    positioning: 'bottom-center',
-                    stopEvent: false,
-                    offset:[0,-10],
-                });
-                ol_map.addOverlay(popup);
-                ol_map.on('click', function(event){
-                    try{
-                        var feature = ol_map.getFeaturesAtPixel(event.pixel)[0];
-                    } catch(err){}
-                    if(feature){
-                        $(element).popover('destroy');
-                        setTimeout(function(){
-                            var coordinate = feature.getGeometry().getCoordinates();
-                            popup.setPosition(coordinate);
-                            popupContent = '<div class="manhole-popup">'+
-                            '<p>Manhole ID: '+feature.get(manholeid_field)+'</p>'+
-                            '<p>Manhole Depth: '+feature.get('MH_Depth')+'</p>'+
-                            '<p>Control: '+feature.get('Control')+'</p>'
-                            + '</div>';
-                            $(element).popover({
-                                container: element.parentElement,
-                                html: true,
-                                sanitize: false,
-                                content: popupContent,
-                                placement: 'top'
-                            });
-                            $(element).popover('show');
-                        },500);
-                    } else {
-                        $(element).popover('destroy');
+            // Create a geojson object holding manhole features
+            var geojson_object = {
+                'type': 'FeatureCollection',
+                'crs': {
+                    'type': 'name',
+                    'properties': {
+                        'name': 'EPSG:3857'
                     }
-                })
-                TETHYS_MAP_VIEW.zoomToExtent(return_data.extent) // Zoom to layer
+                },
+                'features': return_data.mh_features
+            };
+
+            // Convert from geojson to openlayers collection
+            var these_features = new ol.format.GeoJSON().readFeatures(geojson_object);
+
+            // Divide geojson feature collection by Max_Depth
+            var none_features = []
+            var low_features = []
+            var med_features = []
+            var high_features = []
+            these_features.forEach(function(feature){
+                if (feature.get('Control')=='Inlet Controlled'){
+                    med_features.push(feature);
+                } else if (feature.get('Control')=='Storm Sewer Controlled'){
+                    low_features.push(feature);
+                } else {
+                    none_features.push(feature);
+                }
             });
+
+            // Create a new ol source and assign street features
+            var none_vectorSource = new ol.source.Vector({
+                features: none_features
+            });
+            var low_vectorSource = new ol.source.Vector({
+                features: low_features
+            });
+            var med_vectorSource = new ol.source.Vector({
+                features: med_features
+            });
+
+            // Create a new modifiable layer and assign source and style
+            var none_layer = new ol.layer.Vector({
+                name: 'No Risk',
+                source: none_vectorSource,
+                style: none_style,
+            });
+            var low_layer = new ol.layer.Vector({
+                name: 'Low Risk',
+                source: low_vectorSource,
+                style: low_style,
+            });
+            var med_layer = new ol.layer.Vector({
+                name: 'Medium Risk',
+                source: med_vectorSource,
+                style: med_style,
+            });
+            var basemap = new ol.layer.Tile({
+                source: new ol.source.OSM(),
+            });
+
+            // Add streets layer to map
+            ol_map = TETHYS_MAP_VIEW.getMap();
+            ol_map.addLayer(basemap);
+            ol_map.addLayer(none_layer);
+            ol_map.addLayer(low_layer);
+            ol_map.addLayer(med_layer);
+            ol_map = TETHYS_MAP_VIEW.getMap();
+
+            // Print Control
+            var printControl = new ol.control.Print();
+            ol_map.addControl(printControl);
+            // On print save image file
+            printControl.on('printing', function(e){
+                $('body').css('opacity',  0.5);
+            });
+            printControl.on(['print', 'error'], function(e){
+                $('body').css('opacity',  1);
+                // Print success
+                if(e.image){
+                    e.canvas.toBlob(function(blob){
+                        saveAs(blob, 'map.'+e.imageType.replace('image/', ''));
+                    }, e.imageType);
+                } else {
+                    console.warn('No canvas to export');
+                }
+            });
+
+            // Define a new legend
+            var legend = new ol.control.Legend({
+                title: 'Legend',
+                margin: 5,
+                collapsed: false
+            });
+            ol_map.addControl(legend);
+
+            legend.addRow({
+                title: 'Inlet Controlled',
+                typeGeom:'Point',
+                style: new ol.style.Style({
+                    image: new ol.style.Circle({
+                        stroke: new ol.style.Stroke({
+                            color: '#A9A9A9',
+                            width: 1,
+                        }),
+                        fill: new ol.style.Fill({
+                            color: 'orange',
+                        }),
+                        radius: 5
+                    })
+                })
+            });
+            legend.addRow({
+                title: "Storm Sewer Controlled",
+                typeGeom:'Point',
+                style: new ol.style.Style({
+                    image: new ol.style.Circle({
+                        stroke: new ol.style.Stroke({
+                            color: '#A9A9A9',
+                            width: 1,
+                        }),
+                        fill: new ol.style.Fill({
+                            color: 'yellow',
+                        }),
+                        radius: 5
+                    })
+                })
+            });
+            legend.addRow({
+                title: "Not in ROW/Model",
+                typeGeom:'Point',
+                style: new ol.style.Style({
+                    image: new ol.style.Circle({
+                        stroke: new ol.style.Stroke({
+                            color: '#A9A9A9',
+                            width: 1,
+                        }),
+                        fill: new ol.style.Fill({
+                            color: 'green',
+                        }),
+                        radius: 5
+                    })
+                })
+            });
+
+//            var scaleLineControl = new ol.control.CanvasScaleLine();
+//            ol_map.addControl(scaleLineControl);
+
+            // Add selection interaction
+            select = new ol.interaction.Select();
+            ol_map.addInteraction(select);
+
+            // Add a popup overlay to the map
+            var element = document.getElementById('popup');
+            var popup = new ol.Overlay({
+                element: element,
+                positioning: 'bottom-center',
+                stopEvent: false,
+                offset:[0,-10],
+            });
+            ol_map.addOverlay(popup);
+            ol_map.on('click', function(event){
+                try{
+                    var feature = ol_map.getFeaturesAtPixel(event.pixel)[0];
+                } catch(err){}
+                if(feature){
+                    $(element).popover('destroy');
+                    setTimeout(function(){
+                        var coordinate = feature.getGeometry().getCoordinates();
+                        popup.setPosition(coordinate);
+                        popupContent = '<div class="manhole-popup">'+
+                        '<p>Manhole ID: '+feature.get(manholeid_field)+'</p>'+
+                        '<p>Manhole Depth: '+feature.get('MH_Depth')+'</p>'+
+                        '<p>Control: '+feature.get('Control')+'</p>'
+                        + '</div>';
+                        $(element).popover({
+                            container: element.parentElement,
+                            html: true,
+                            sanitize: false,
+                            content: popupContent,
+                            placement: 'top'
+                        });
+                        $(element).popover('show');
+                    },500);
+                } else {
+                    $(element).popover('destroy');
+                }
+            })
+            TETHYS_MAP_VIEW.zoomToExtent(return_data.extent) // Zoom to layer
+            $("#loading-modal").modal('hide');
+        });
     }
 }
 

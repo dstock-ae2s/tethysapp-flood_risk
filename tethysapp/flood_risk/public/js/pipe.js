@@ -98,6 +98,7 @@ and associates this value with a pipes shapefile then calculates
 necessary pipe diameter to contain pipe and street flow
 */
 function process_pipe(){
+    $("#loading-modal").modal('show');
 
     var data = new FormData();
     console.log("In process pipe")
@@ -449,6 +450,7 @@ function process_pipe(){
                 }
             })
             TETHYS_MAP_VIEW.zoomToExtent(return_data.extent) // Zoom to layer
+            $("#loading-modal").modal('hide');
         });
     }
 }

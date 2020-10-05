@@ -95,6 +95,7 @@ Function which extracts flood depths around streets from raster
 and associates this value with a divided streets shapefile
 */
 process_streets = function(data) {
+    $("#loading-modal").modal('show');
 
     var data = new FormData();
 
@@ -398,6 +399,7 @@ process_streets = function(data) {
                 }
             })
             TETHYS_MAP_VIEW.zoomToExtent(return_data.extent) // Zoom to layer
+            $("#loading-modal").modal('hide');
         });
     };
 };

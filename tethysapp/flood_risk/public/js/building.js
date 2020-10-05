@@ -96,6 +96,8 @@ Function which extracts flood depths over buildings
 and calculates the building value lost and prioritizes
 flooding by residential landuse */
 process_buildings = function(){
+    $("#loading-modal").modal('show');
+
     var data = new FormData();
 
     //Read in input fields
@@ -427,6 +429,7 @@ process_buildings = function(){
                 }
             })
             TETHYS_MAP_VIEW.zoomToExtent(return_data.extent) // Zoom to layer
+            $("#loading-modal").modal('hide');
         });
     }
 };

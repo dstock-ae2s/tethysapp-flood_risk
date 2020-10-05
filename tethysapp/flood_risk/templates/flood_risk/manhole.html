@@ -122,6 +122,23 @@
 {% endblock %}
 
 {% block after_app_content %}
+  <div class="modal fade" id="loading-modal" tabindex="-1" role="dialog" aria-labelledby="help-modal-label">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          <h5 class="modal-title" style="text-align:center;" id="modal-category">Loading Results/Generating Map...</h5>
+        </div>
+        <div class="modal-body" style="text-align:center;" id="chart-loading-modal-body">
+            <img src="{% static 'flood_risk/images/loading.gif' %}" style="align:center;" width="150" height="150" alt="Loading Please Wait ...">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="modal fade" id="popup-modal" tabindex="-1" role="dialog" aria-labelledby="help-modal-label">
     <div class="modal-dialog" role="document">
       <div class="modal-content">
